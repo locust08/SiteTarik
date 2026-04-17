@@ -1,0 +1,15 @@
+{
+  "desktop": {
+    "href": "http://127.0.0.1:3000/",
+    "heroHeight": 845.1875,
+    "services": 5,
+    "faqs": 6,
+    "scrollHeight": 12304,
+    "innerHeight": 900
+  },
+  "mobile": {
+    "innerWidth": 390,
+    "menuButtonVisible": true,
+    "scrollHeight": 19849
+  }
+}
