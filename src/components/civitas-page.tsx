@@ -28,6 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 import { CivitasFooter } from "@/components/civitas-footer";
+import { CtaLink } from "@/components/cta-link";
 import { WebsiteSubmissionSection } from "@/components/website-submission-section";
 
 type NavItem = {
@@ -303,34 +304,6 @@ function Reveal({
   );
 }
 
-function PrimaryLink({
-  href,
-  children,
-  dark = false,
-  className = "",
-}: {
-  href: string;
-  children: React.ReactNode;
-  dark?: boolean;
-  className?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`group inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-[transform,background-color,box-shadow,color] duration-200 ${
-        dark
-          ? "bg-[var(--teal)] text-white hover:bg-[var(--teal-deep)]"
-          : "bg-[var(--gold-soft)] text-[var(--teal-deep)] hover:-translate-y-0.5 hover:shadow-lg"
-      } ${className}`}
-    >
-      {children}
-      <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
-        <ArrowRight className="h-4 w-4" />
-      </span>
-    </Link>
-  );
-}
-
 function ShowcaseMockup({
   image,
 }: {
@@ -503,9 +476,11 @@ export function CivitasPage() {
 
       const rect = section.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
       const start = viewportHeight * 0.72;
       const end = -rect.height * 0.22;
-      const progress = (start - rect.top) / (start - end);
+      const sensitivity = isDesktop ? 1.6 : 1.25;
+      const progress = ((start - rect.top) / (start - end)) * sensitivity;
 
       setProcessProgress(Math.min(1, Math.max(0, progress)));
     };
@@ -639,7 +614,9 @@ export function CivitasPage() {
               </Link>
             ))}
           </div>
-          <PrimaryLink href="#contact">Start Upgrade</PrimaryLink>
+          <CtaLink href="#contact" variant="soft">
+            Start Upgrade
+          </CtaLink>
         </div>
       </div>
 
@@ -648,21 +625,22 @@ export function CivitasPage() {
           <div className="mx-auto grid w-full max-w-[1150px] items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
             <Reveal className="max-w-[640px]">
               <h1 className="max-w-[12.5ch] font-[family-name:var(--font-heading)] text-[3.05rem] leading-[1.08] tracking-[-0.042em] sm:text-[4rem] sm:leading-[1.04] lg:text-[4.8rem] lg:leading-[1.01]">
-                Upgrade Your Website. Skip the Full Rebuild.
+                Upgrade Your WordPress. Skip the Full Rebuild.
               </h1>
 
               <p className="mt-7 max-w-[33rem] text-lg font-medium leading-8 text-white/74 sm:text-xl">
-                Get a stronger, cleaner version of your current website, with
-                basic SEO included and without the usual rebuild cost.
+                Upgrade your existing site with basic SEO and no full rebuild.
+                Built for WordPress, Joomla, Drupal, and similar CMS platforms.
               </p>
 
               <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
-                <PrimaryLink
+                <CtaLink
                   href="#contact"
-                  className="self-start bg-white px-4 py-2.5 text-[var(--teal-deep)] hover:bg-white/92 sm:px-5 sm:py-3"
+                  variant="light"
+                  className="self-start px-4 py-2.5 sm:px-5 sm:py-3"
                 >
                   Start Upgrade
-                </PrimaryLink>
+                </CtaLink>
                 <Link
                   href="#how-it-work"
                   className="inline-flex items-center gap-3 text-sm font-semibold text-white/88 hover:text-[var(--gold-soft)]"
@@ -733,7 +711,9 @@ export function CivitasPage() {
                     without a full rebuild.
                   </p>
                   <div className="mt-7 flex justify-center lg:justify-start">
-                    <PrimaryLink href="#how-it-work">See How It Works</PrimaryLink>
+                    <CtaLink href="#how-it-work" variant="soft">
+                      See How It Works
+                    </CtaLink>
                   </div>
                 </Reveal>
               </div>
@@ -846,7 +826,9 @@ export function CivitasPage() {
                   low annual cost, with blog growth available when needed.
                 </p>
                 <div className="mt-4 flex justify-center">
-                  <PrimaryLink href="#pricing">View Package Details</PrimaryLink>
+                  <CtaLink href="#pricing" variant="soft">
+                    View Package Details
+                  </CtaLink>
                 </div>
               </div>
             </Reveal>
@@ -885,7 +867,9 @@ export function CivitasPage() {
                   Website reborn from <span className="text-[#ee2028]">RM100/year</span>, plus an optional <span className="text-[#ee2028]">RM120</span> Blog Add-On for
                   12 pages over 12 weeks.
                 </p>
-                <PrimaryLink href="#contact">Check If Your Website Fits</PrimaryLink>
+                <CtaLink href="#contact" variant="soft">
+                  Check If Your Website Fits
+                </CtaLink>
               </div>
             </Reveal>
           </div>
@@ -936,7 +920,9 @@ export function CivitasPage() {
                 <p className="max-w-[34rem] text-base leading-8 text-[var(--muted)]">
                   Lower cost. Faster turnaround. <span className="text-[#ee2028]">Basic SEO</span>. No technical setup.
                 </p>
-                <PrimaryLink href="#contact">Start With RM100/Year</PrimaryLink>
+                <CtaLink href="#contact" variant="soft">
+                  Start With RM100/Year
+                </CtaLink>
               </div>
             </Reveal>
           </div>
@@ -1101,9 +1087,9 @@ export function CivitasPage() {
                 </div>
 
                 <div className="flex flex-col gap-4 border-t border-[var(--border)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-                  <PrimaryLink href="#contact" className="justify-center">
+                  <CtaLink href="#contact" variant="soft" className="justify-center">
                     Choose This Plan
-                  </PrimaryLink>
+                  </CtaLink>
                 </div>
               </article>
             </Reveal>
@@ -1202,7 +1188,9 @@ export function CivitasPage() {
                   A clear process for existing websites. Payment first for the
                   blog add-on, then the brief, then the handoff.
                 </p>
-                <PrimaryLink href="#contact">Submit My Website</PrimaryLink>
+                <CtaLink href="#contact" variant="soft">
+                  Submit My Website
+                </CtaLink>
               </Reveal>
             </div>
           </div>

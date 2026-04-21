@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { CtaLink } from "@/components/cta-link";
 
 const navItems = [
-  { label: "Pricing", href: "/#pricing" },
-  { label: "What You Get", href: "/#services" },
-  { label: "How It Works", href: "/#how-it-work" },
-  { label: "Start", href: "/#contact" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "What You Get", href: "#services" },
+  { label: "How It Works", href: "#how-it-work" },
+  { label: "Start", href: "#contact" },
 ];
 
 export function CivitasHeader({ solid = false }: { solid?: boolean }) {
@@ -33,15 +33,11 @@ export function CivitasHeader({ solid = false }: { solid?: boolean }) {
           ))}
         </nav>
 
-        <Link
-          href="/#contact"
-          className="group hidden items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23] lg:inline-flex"
-        >
-          Start My Website Upgrade
-          <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
-            <ArrowRight className="h-4 w-4" />
-          </span>
-        </Link>
+        <div className="hidden lg:flex">
+          <CtaLink href="#contact" variant={solid ? "brand" : "light"}>
+            Start My Website Upgrade
+          </CtaLink>
+        </div>
       </div>
     </header>
   );

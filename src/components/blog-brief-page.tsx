@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { ArrowRight, CheckCircle2, ChevronDown, LoaderCircle, ThumbsUp } from "lucide-react";
+import { thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
 
 type BlogBriefForm = {
   briefBusinessDescription: string;
@@ -27,7 +28,7 @@ type ReceiptData = {
   submittedAt: string;
 };
 
-const thankYouStorageKey = "siteTarikThankYouSubmission";
+const minimumLoadingMs = 1500;
 
 const goalOptions = [
   "Get more leads",
@@ -75,7 +76,7 @@ function TextArea({
   placeholder,
   value,
   onChange,
-  rows = 4,
+  rows = 2,
   required = false,
 }: {
   name: keyof BlogBriefForm;
@@ -85,16 +86,140 @@ function TextArea({
   rows?: number;
   required?: boolean;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const element = textareaRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }, [value]);
+
   return (
     <textarea
+      ref={textareaRef}
       name={name}
       rows={rows}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
       required={required}
-      className="w-full resize-none rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
+      className="w-full resize-none overflow-hidden rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-7 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
     />
+  );
+}
+
+function SelectControl({
+  name,
+  value,
+  onChange,
+  options,
+  required = false,
+}: {
+  name: keyof BlogBriefForm;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  options: string[];
+  required?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find((option) => option === value) ?? value;
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleSelect = (selectedValue: string) => {
+    onChange({
+      target: {
+        name,
+        value: selectedValue,
+      },
+    } as ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      {required ? (
+        <input
+          tabIndex={-1}
+          aria-hidden="true"
+          className="absolute h-0 w-0 opacity-0"
+          name={name}
+          value={value}
+          required
+          readOnly
+        />
+      ) : null}
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={`group flex w-full items-center justify-between rounded-[1rem] border bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,250,250,0.96))] px-4 py-3.5 text-left text-[15px] text-[var(--foreground)] shadow-[0_6px_18px_rgba(0,0,0,0.04)] transition duration-200 hover:border-[rgba(238,32,40,0.2)] hover:shadow-[0_12px_24px_rgba(238,32,40,0.06)] focus:outline-none focus:ring-4 focus:ring-[rgba(238,32,40,0.08)] ${
+          isOpen ? "border-[var(--gold)] shadow-[0_0_0_4px_rgba(238,32,40,0.08),0_12px_24px_rgba(0,0,0,0.06)]" : "border-[var(--border)]"
+        }`}
+      >
+        <span className="truncate">{selectedOption}</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-[var(--gold)] transition duration-200 ${
+            isOpen ? "rotate-180 text-[var(--gold)]" : "text-[var(--gold)]/80 group-hover:text-[var(--gold)]"
+          }`}
+        />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-[1rem] border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_18px_40px_rgba(0,0,0,0.12)]">
+          <div role="listbox" aria-label={String(name)} className="max-h-64 overflow-auto p-2">
+            {options.map((option) => {
+              const isSelected = option === value;
+
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => handleSelect(option)}
+                  className={`flex w-full items-center justify-between rounded-[0.85rem] px-4 py-3 text-left text-[15px] transition ${
+                    isSelected
+                      ? "bg-[var(--gold-soft)] text-[var(--foreground)]"
+                      : "text-[var(--muted)] hover:bg-[rgba(0,0,0,0.04)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  <span>{option}</span>
+                  {isSelected ? <span className="h-2 w-2 rounded-full bg-[var(--gold)]" /> : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -143,46 +268,127 @@ function EmptyState() {
 export function BlogBriefPage() {
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [form, setForm] = useState<BlogBriefForm>(initialBlogBriefForm);
-  const [ready, setReady] = useState(false);
+  const [phase, setPhase] = useState<"loading" | "confirming" | "ready">("loading");
+  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    let confirmTimeoutId: number | undefined;
+    const startedAt = Date.now();
+
     try {
-      const raw = window.sessionStorage.getItem(thankYouStorageKey);
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
 
-      if (!raw) {
-        setReady(true);
-        return;
+      if (sessionId) {
+        window.sessionStorage.setItem(thankYouStripeSessionKey, sessionId);
       }
-
-      const parsed = JSON.parse(raw) as Partial<ReceiptData>;
-
-      if (parsed.selectedPackageValue !== "blog") {
-        setReady(true);
-        return;
-      }
-
-      setReceipt({
-        fullName: parsed.fullName ?? "",
-        businessName: parsed.businessName ?? "",
-        websiteUrl: parsed.websiteUrl ?? "",
-        emailAddress: parsed.emailAddress ?? "",
-        selectedPackage: parsed.selectedPackage ?? "SEO Enhancement",
-        selectedPackageValue: "blog",
-        submissionDetails: parsed.submissionDetails ?? undefined,
-        submittedAt: parsed.submittedAt ?? new Date().toISOString(),
-      });
-
-      setForm((current) => ({
-        ...current,
-        targetLocation: parsed.submissionDetails?.targetLocation
-          ? String(parsed.submissionDetails.targetLocation)
-          : "",
-      }));
-    } finally {
-      setReady(true);
+    } catch {
+      // Ignore malformed URLs and keep the brief flow usable.
     }
+
+    const waitForMinimumLoadingTime = async () => {
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, minimumLoadingMs - elapsed);
+
+      if (remaining > 0) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));
+      }
+    };
+
+    const verifyPaymentAccess = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlSessionId = params.get("session_id");
+      const storedSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+      const sessionId = urlSessionId ?? storedSessionId;
+
+      if (urlSessionId) {
+        window.sessionStorage.setItem(thankYouStripeSessionKey, urlSessionId);
+      }
+
+      if (!sessionId) {
+        setAccessState("denied");
+        return false;
+      }
+
+      try {
+        const response = await fetch(`/api/stripe/verify?session_id=${encodeURIComponent(sessionId)}`);
+        const payload = (await response.json()) as { isPaid?: boolean; selectedPackage?: string };
+
+        const allowed = response.ok && payload.isPaid === true && payload.selectedPackage === "blog";
+        setAccessState(allowed ? "allowed" : "denied");
+        return allowed;
+      } catch {
+        setAccessState("denied");
+        return false;
+      }
+    };
+
+    const initializeBrief = async () => {
+      try {
+        const allowed = await verifyPaymentAccess();
+
+        if (!allowed) {
+          await waitForMinimumLoadingTime();
+          return;
+        }
+
+        const raw = window.sessionStorage.getItem(thankYouStorageKey);
+
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<ReceiptData>;
+
+          if (parsed.selectedPackageValue === "blog") {
+            if (cancelled) {
+              return;
+            }
+
+            setReceipt({
+              fullName: parsed.fullName ?? "",
+              businessName: parsed.businessName ?? "",
+              websiteUrl: parsed.websiteUrl ?? "",
+              emailAddress: parsed.emailAddress ?? "",
+              selectedPackage: parsed.selectedPackage ?? "SEO Enhancement",
+              selectedPackageValue: "blog",
+              submissionDetails: parsed.submissionDetails ?? undefined,
+              submittedAt: parsed.submittedAt ?? new Date().toISOString(),
+            });
+
+            setForm((current) => ({
+              ...current,
+              targetLocation: parsed.submissionDetails?.targetLocation
+                ? String(parsed.submissionDetails.targetLocation)
+                : "",
+            }));
+          }
+        }
+        await waitForMinimumLoadingTime();
+
+        if (!cancelled) {
+          setPhase("confirming");
+
+          confirmTimeoutId = window.setTimeout(() => {
+            if (!cancelled) {
+              setPhase("ready");
+            }
+          }, 750);
+        }
+      } catch {
+        await waitForMinimumLoadingTime();
+      }
+    };
+
+    void initializeBrief();
+
+    return () => {
+      cancelled = true;
+
+      if (confirmTimeoutId) {
+        window.clearTimeout(confirmTimeoutId);
+      }
+    };
   }, []);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -209,14 +415,23 @@ export function BlogBriefPage() {
       };
 
       window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(mergedReceipt));
-      window.location.assign("/thank-you?checkout=success&blog=complete");
+      const stripeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+      const thankYouUrl = stripeSessionId
+        ? `/thank-you?checkout=success&blog=complete&session_id=${encodeURIComponent(stripeSessionId)}`
+        : "/thank-you?checkout=success&blog=complete";
+
+      window.location.assign(thankYouUrl);
     } catch {
       setError("We could not save the blog brief. Please try again.");
       setSubmitting(false);
     }
   };
 
-  if (!ready) {
+  if (accessState === "denied") {
+    return <EmptyState />;
+  }
+
+  if (phase === "loading") {
     return (
       <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_24%),linear-gradient(180deg,rgba(8,8,8,0.98)_0%,rgba(18,18,18,0.98)_100%)] px-6">
         <div className="absolute inset-0 backdrop-blur-2xl" />
@@ -225,13 +440,36 @@ export function BlogBriefPage() {
             <LoaderCircle className="h-9 w-9 animate-spin" />
           </div>
           <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
-            Loading
+            Verifying access
           </p>
           <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[2.5rem] leading-[1] tracking-[-0.05em]">
-            Just a moment
+            Preparing your brief
           </h1>
           <p className="mt-3 max-w-[18rem] text-sm leading-7 text-white/72">
-            We&apos;re preparing your blog brief.
+            We&apos;re confirming your payment details and loading the brief form.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (phase === "confirming") {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_24%),linear-gradient(180deg,rgba(8,8,8,0.98)_0%,rgba(18,18,18,0.98)_100%)] px-6">
+        <div className="absolute inset-0 backdrop-blur-2xl" />
+        <div className="absolute inset-0 bg-black/35" />
+        <div className="relative z-10 flex w-full max-w-[28rem] flex-col items-center rounded-[2rem] border border-white/10 bg-white/8 px-8 py-10 text-center text-white shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.12)] text-[#22c55e] shadow-[0_18px_40px_rgba(0,0,0,0.3)]">
+            <CheckCircle2 className="h-10 w-10 animate-pulse" />
+          </div>
+          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
+            Payment confirmed
+          </p>
+          <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[2.5rem] leading-[1] tracking-[-0.05em]">
+            Ngam!
+          </h1>
+          <p className="mt-3 max-w-[18rem] text-sm leading-7 text-white/72">
+            Your payment is confirmed. We&apos;re loading the blog brief now.
           </p>
         </div>
       </main>
@@ -265,12 +503,12 @@ export function BlogBriefPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
               Next step
             </p>
-            <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[2.5rem] leading-[0.98] tracking-[-0.055em] sm:text-[3.3rem]">
+            <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[2.2rem] leading-[1.02] tracking-[-0.04em] sm:text-[2.7rem]">
               Fill the blog brief
             </h1>
-            <p className="mt-4 text-base leading-7 text-[var(--muted)] sm:text-lg">
-              Your payment is done. Add the blog details now so we can prepare the
-              12-page SEO Enhancement handoff.
+            <p className="mt-4 max-w-[34rem] text-sm leading-6 text-[var(--muted)] sm:text-base">
+              Payment complete. Add the blog details so we can prepare the
+              SEO Enhancement handoff.
             </p>
 
             <div className="mt-6 rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-strong)] p-4">
@@ -292,12 +530,11 @@ export function BlogBriefPage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
                 Blog Add-On Form
               </p>
-              <h2 className="mt-4 font-[family-name:var(--font-heading)] text-[2.2rem] leading-[1.02] tracking-[-0.04em] sm:text-[2.7rem]">
+              <h2 className="mt-4 font-[family-name:var(--font-heading)] text-[2.2rem] leading-[1.02] tracking-[-0.04em] sm:text-[2.6rem]">
                 Tell us what the blog should cover
               </h2>
               <p className="mt-4 max-w-[42rem] text-base leading-7 text-[var(--muted)]">
-                Keep it simple. We already have your basic details from checkout, so
-                this form only covers the blog plan itself.
+                Keep it concise. We already have your checkout details.
               </p>
             </div>
 
@@ -307,10 +544,10 @@ export function BlogBriefPage() {
                   <FieldLabel required>Briefly describe your business</FieldLabel>
                   <TextArea
                     name="briefBusinessDescription"
-                    placeholder="What does your business do and offer?"
+                    placeholder="What do you offer?"
                     value={form.briefBusinessDescription}
                     onChange={handleChange}
-                    rows={4}
+                    rows={2}
                     required
                   />
                 </label>
@@ -319,10 +556,10 @@ export function BlogBriefPage() {
                   <FieldLabel required>Main products or services</FieldLabel>
                   <TextArea
                     name="mainProductsServices"
-                    placeholder="List your main services or products"
+                    placeholder="Main services or products"
                     value={form.mainProductsServices}
                     onChange={handleChange}
-                    rows={4}
+                    rows={2}
                     required
                   />
                 </label>
@@ -332,10 +569,10 @@ export function BlogBriefPage() {
                     <FieldLabel required>Target keywords or search terms</FieldLabel>
                     <TextArea
                       name="targetKeywords"
-                      placeholder="List keywords or phrases your customers may search for"
+                      placeholder="Key search terms"
                       value={form.targetKeywords}
                       onChange={handleChange}
-                      rows={4}
+                      rows={2}
                       required
                     />
                   </label>
@@ -344,10 +581,10 @@ export function BlogBriefPage() {
                     <FieldLabel required>Target location or market</FieldLabel>
                     <TextArea
                       name="targetLocation"
-                      placeholder="Kuala Lumpur, Johor, nationwide"
+                      placeholder="City or market"
                       value={form.targetLocation}
                       onChange={handleChange}
-                      rows={4}
+                      rows={2}
                       required
                     />
                   </label>
@@ -356,28 +593,23 @@ export function BlogBriefPage() {
                 <div className="grid gap-5 md:grid-cols-2">
                   <label className="block">
                     <FieldLabel required>Main goal of the blog pages</FieldLabel>
-                    <select
+                    <SelectControl
                       name="mainGoal"
                       value={form.mainGoal}
                       onChange={handleChange}
-                      className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none focus:border-[var(--gold)]"
-                    >
-                      {goalOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
+                      options={goalOptions}
+                      required
+                    />
                   </label>
 
                   <label className="block">
                     <FieldLabel optional>Ideal customers</FieldLabel>
                     <TextArea
                       name="idealCustomers"
-                      placeholder="Describe the type of customer you want to attract"
+                      placeholder="Ideal customer"
                       value={form.idealCustomers}
                       onChange={handleChange}
-                      rows={4}
+                      rows={2}
                     />
                   </label>
                 </div>
@@ -386,10 +618,10 @@ export function BlogBriefPage() {
                   <FieldLabel optional>Topics to cover</FieldLabel>
                   <TextArea
                     name="topicsToCover"
-                    placeholder="List topics you want included"
+                    placeholder="Topics to cover"
                     value={form.topicsToCover}
                     onChange={handleChange}
-                    rows={4}
+                    rows={2}
                   />
                 </label>
 
@@ -398,10 +630,10 @@ export function BlogBriefPage() {
                     <FieldLabel optional>Pages or offers to push</FieldLabel>
                     <TextArea
                       name="pagesToPush"
-                      placeholder="List the service pages or offers you want readers to visit"
+                      placeholder="Pages or offers"
                       value={form.pagesToPush}
                       onChange={handleChange}
-                      rows={4}
+                      rows={2}
                     />
                   </label>
 
@@ -409,10 +641,10 @@ export function BlogBriefPage() {
                     <FieldLabel optional>Additional notes</FieldLabel>
                     <TextArea
                       name="additionalNotes"
-                      placeholder="Anything else we should know"
+                      placeholder="Any extra notes"
                       value={form.additionalNotes}
                       onChange={handleChange}
-                      rows={4}
+                      rows={2}
                     />
                   </label>
                 </div>
@@ -430,8 +662,8 @@ export function BlogBriefPage() {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">
                       Final step
                     </p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">
-                      After you submit this form, we&apos;ll send you to the confirmation page.
+                    <p className="mt-1 text-[0.95rem] leading-6 text-[var(--foreground)]">
+                      After you submit, we&apos;ll send you to the confirmation page.
                     </p>
                   </div>
 
@@ -447,9 +679,9 @@ export function BlogBriefPage() {
                       </>
                     ) : (
                       <>
-                        Continue to confirmation
+                        Ngam?
                         <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
-                          <ArrowRight className="h-4 w-4" />
+                          <ThumbsUp className="h-4 w-4" />
                         </span>
                       </>
                     )}

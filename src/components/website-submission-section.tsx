@@ -6,6 +6,8 @@ import {
   ChevronDown,
   LoaderCircle,
 } from "lucide-react";
+import { ctaClassName } from "@/components/cta-link";
+import { orderCompleteStorageKey, thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
 
 type PackagePlan = "core" | "blog";
 
@@ -39,7 +41,7 @@ type WebsiteSubmissionForm = {
   additionalNotes: string;
 };
 
-const thankYouStorageKey = "siteTarikThankYouSubmission";
+const emptyCompletionState = null;
 
 const packagePlans: Array<{
   value: PackagePlan;
@@ -165,7 +167,7 @@ function TextArea({
   placeholder,
   value,
   onChange,
-  rows = 4,
+  rows = 2,
   required = false,
 }: {
   name: keyof WebsiteSubmissionForm;
@@ -175,15 +177,29 @@ function TextArea({
   rows?: number;
   required?: boolean;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const element = textareaRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }, [value]);
+
   return (
     <textarea
+      ref={textareaRef}
       name={name}
       rows={rows}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
       required={required}
-      className="w-full resize-none rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
+      className="w-full resize-none overflow-hidden rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-7 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
     />
   );
 }
@@ -315,15 +331,23 @@ export function WebsiteSubmissionSection({
   const [locationDetectionState, setLocationDetectionState] = useState<
     "idle" | "detecting" | "detected" | "manual"
   >("idle");
+  const [completionState, setCompletionState] = useState<string | null>(emptyCompletionState);
   const didAttemptLocationDetect = useRef(false);
 
   const isBlogPackage = selectedPackage === "blog";
   const introCopy =
     selectedPackage === "blog"
-      ? "SEO Enhancement selected. Pay first, then complete the blog brief on the next page."
-      : "Core Relaunch selected. Share your website details and we will prepare the hosted version with basic SEO for your existing website, then send the final website link to your email.";
+      ? "SEO Enhancement selected. Pay first, then complete the brief."
+      : "Core Relaunch selected. Share the essentials and we’ll handle the rest.";
 
   useEffect(() => {
+    try {
+      const storedCompletion = window.localStorage.getItem(orderCompleteStorageKey);
+      setCompletionState(storedCompletion);
+    } catch {
+      setCompletionState(null);
+    }
+
     if (didAttemptLocationDetect.current || websiteForm.targetLocation) {
       return;
     }
@@ -411,6 +435,10 @@ export function WebsiteSubmissionSection({
 
   const handleWebsiteSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (completionState) {
+      setSubmitError("Your last order is complete. Start a new order to continue.");
+      return;
+    }
     setSubmitError(null);
     setIsSubmitting(true);
 
@@ -461,6 +489,23 @@ export function WebsiteSubmissionSection({
     }
   };
 
+  const handleStartNewOrder = () => {
+    try {
+      window.localStorage.removeItem(orderCompleteStorageKey);
+      window.sessionStorage.removeItem(thankYouStorageKey);
+      window.sessionStorage.removeItem(thankYouStripeSessionKey);
+    } catch {
+      // Ignore storage cleanup failures and let the user continue manually.
+    }
+
+    setCompletionState(null);
+    setSubmitError(null);
+    setIsSubmitting(false);
+    setLocationDetectionState("idle");
+    didAttemptLocationDetect.current = false;
+    setWebsiteForm(initialWebsiteSubmissionForm);
+  };
+
   return (
     <section
       id="contact"
@@ -488,7 +533,7 @@ export function WebsiteSubmissionSection({
           </p>
         </div>
 
-        <div className="mt-12 flex flex-col items-center gap-8">
+        <div className="mt-10 flex flex-col items-center gap-5">
           <div className="mx-auto w-full max-w-[960px] rounded-[2rem] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)] sm:p-8">
             <div className="border-b border-[var(--border)] pb-6">
               <div className="min-w-0">
@@ -512,7 +557,7 @@ export function WebsiteSubmissionSection({
                   <FieldLabel required>Full Name</FieldLabel>
                   <TextInput
                     name="fullName"
-                    placeholder="Enter your full name"
+                    placeholder="Full name"
                     value={websiteForm.fullName}
                     onChange={handleWebsiteInputChange}
                     required
@@ -523,7 +568,7 @@ export function WebsiteSubmissionSection({
                   <FieldLabel required>Business Name</FieldLabel>
                   <TextInput
                     name="businessName"
-                    placeholder="Enter your business name"
+                    placeholder="Business name"
                     value={websiteForm.businessName}
                     onChange={handleWebsiteInputChange}
                     required
@@ -537,7 +582,7 @@ export function WebsiteSubmissionSection({
                   <TextInput
                     name="websiteUrl"
                     type="url"
-                    placeholder="https://yourwebsite.com"
+                    placeholder="Website URL"
                     value={websiteForm.websiteUrl}
                     onChange={handleWebsiteInputChange}
                     required
@@ -549,7 +594,7 @@ export function WebsiteSubmissionSection({
                   <TextInput
                     name="emailAddress"
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder="Work email"
                     value={websiteForm.emailAddress}
                     onChange={handleWebsiteInputChange}
                     required
@@ -573,17 +618,17 @@ export function WebsiteSubmissionSection({
                   <FieldLabel required>Target Location or Market</FieldLabel>
                   <TextInput
                     name="targetLocation"
-                    placeholder="Kuala Lumpur, Johor, nationwide"
+                    placeholder="City or market"
                     value={websiteForm.targetLocation}
                     onChange={handleWebsiteInputChange}
                     required
                   />
                   <p className="mt-2 text-[0.72rem] leading-5 text-[var(--muted)]">
                     {locationDetectionState === "detecting"
-                      ? "Detecting your location automatically..."
+                      ? "Detecting location..."
                       : locationDetectionState === "detected"
-                        ? "Auto-detected from your browser when available."
-                        : "Auto-detects when location access is allowed."}
+                        ? "Auto-detected."
+                        : "You can type it manually."}
                   </p>
                 </label>
               </div>
@@ -668,10 +713,10 @@ export function WebsiteSubmissionSection({
                         <FieldLabel required>Briefly describe your business</FieldLabel>
                         <TextArea
                           name="briefBusinessDescription"
-                          placeholder="What does your business do and offer?"
+                          placeholder="What do you offer?"
                           value={websiteForm.briefBusinessDescription}
                           onChange={handleWebsiteInputChange}
-                          rows={4}
+                          rows={2}
                           required
                         />
                       </label>
@@ -680,10 +725,10 @@ export function WebsiteSubmissionSection({
                         <FieldLabel required>Main products or services</FieldLabel>
                         <TextArea
                           name="mainProductsServices"
-                          placeholder="List your main services or products"
+                          placeholder="Main services or products"
                           value={websiteForm.mainProductsServices}
                           onChange={handleWebsiteInputChange}
-                          rows={4}
+                          rows={2}
                           required
                         />
                       </label>
@@ -693,10 +738,10 @@ export function WebsiteSubmissionSection({
                           <FieldLabel required>Target keywords or search terms</FieldLabel>
                           <TextArea
                             name="targetKeywords"
-                            placeholder="List keywords or phrases your customers may search for"
+                            placeholder="Key search terms"
                             value={websiteForm.targetKeywords}
                             onChange={handleWebsiteInputChange}
-                            rows={4}
+                            rows={2}
                             required
                           />
                         </label>
@@ -705,7 +750,7 @@ export function WebsiteSubmissionSection({
                           <FieldLabel required>Target location or market</FieldLabel>
                           <TextInput
                             name="targetLocation"
-                            placeholder="Kuala Lumpur, Johor, nationwide"
+                            placeholder="City or market"
                             value={websiteForm.targetLocation}
                             onChange={handleWebsiteInputChange}
                             required
@@ -729,22 +774,22 @@ export function WebsiteSubmissionSection({
                           <FieldLabel optional>Ideal customers</FieldLabel>
                           <TextArea
                             name="idealCustomers"
-                            placeholder="Describe the type of customer you want to attract"
+                            placeholder="Ideal customer"
                             value={websiteForm.idealCustomers}
                             onChange={handleWebsiteInputChange}
-                            rows={4}
+                            rows={2}
                           />
                         </label>
                       </div>
 
                       <label className="block">
-                        <FieldLabel optional>Topics to cover</FieldLabel>
-                        <TextArea
-                          name="topicsToCover"
-                          placeholder="List topics you want included"
-                          value={websiteForm.topicsToCover}
-                          onChange={handleWebsiteInputChange}
-                          rows={4}
+                      <FieldLabel optional>Topics to cover</FieldLabel>
+                      <TextArea
+                        name="topicsToCover"
+                        placeholder="Topics to cover"
+                        value={websiteForm.topicsToCover}
+                        onChange={handleWebsiteInputChange}
+                        rows={2}
                         />
                       </label>
 
@@ -753,10 +798,10 @@ export function WebsiteSubmissionSection({
                           <FieldLabel optional>Pages or offers to push</FieldLabel>
                           <TextArea
                             name="pagesToPush"
-                            placeholder="List the service pages or offers you want readers to visit"
+                            placeholder="Pages or offers"
                             value={websiteForm.pagesToPush}
                             onChange={handleWebsiteInputChange}
-                            rows={4}
+                            rows={2}
                           />
                         </label>
 
@@ -764,10 +809,10 @@ export function WebsiteSubmissionSection({
                           <FieldLabel optional>Additional notes</FieldLabel>
                           <TextArea
                             name="additionalNotes"
-                            placeholder="Anything else we should know"
+                            placeholder="Any extra notes"
                             value={websiteForm.additionalNotes}
                             onChange={handleWebsiteInputChange}
-                            rows={4}
+                            rows={2}
                           />
                         </label>
                       </div>
@@ -777,14 +822,19 @@ export function WebsiteSubmissionSection({
               </div>
             ) : null}
 
-            <div className="rounded-[1.4rem] bg-[rgba(255,255,255,0.9)] px-5 py-4">
+            <div className="rounded-[1.4rem] bg-[rgba(255,255,255,0.9)] px-5 py-4 sm:px-6 sm:py-5">
+              {completionState ? (
+                <div className="rounded-[1rem] border border-[rgba(238,32,40,0.16)] bg-[var(--gold-soft)] px-4 py-3 text-sm leading-6 text-[var(--foreground)]">
+                  Your purchase is already complete. Start a new order only if you want to submit a fresh request.
+                </div>
+              ) : null}
               {submitError ? (
-                <p className="mb-3 rounded-[1rem] border border-[rgba(238,32,40,0.16)] bg-[var(--gold-soft)] px-4 py-3 text-sm leading-6 text-[var(--foreground)]">
+                <p className="rounded-[1rem] border border-[rgba(238,32,40,0.16)] bg-[var(--gold-soft)] px-4 py-3 text-sm leading-6 text-[var(--foreground)]">
                   {submitError}
                 </p>
               ) : null}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+              <div className="mt-4 flex flex-col gap-4 border-t border-[var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="max-w-[34rem]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">
                     Trust Line
                   </p>
@@ -793,26 +843,39 @@ export function WebsiteSubmissionSection({
                     completion.
                   </p>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23] hover:shadow-[0_18px_35px_rgba(0,0,0,0.16)]"
-                  aria-live="polite"
-                >
-                  {isSubmitting ? (
-                    <>
-                      Redirecting
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                    </>
-                  ) : (
-                    <>
-                      Continue to payment
-                      <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
-                        <ArrowRight className="h-4 w-4" />
-                      </span>
-                    </>
-                  )}
-                </button>
+                {completionState ? (
+                  <button
+                    type="button"
+                    onClick={handleStartNewOrder}
+                    className={ctaClassName("soft", "justify-center")}
+                  >
+                    Start New Order
+                    <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23] hover:shadow-[0_18px_35px_rgba(0,0,0,0.16)]"
+                    aria-live="polite"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        Redirecting
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      </>
+                    ) : (
+                      <>
+                        Continue to payment
+                        <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
+                          <ArrowRight className="h-4 w-4" />
+                        </span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </form>

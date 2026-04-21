@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   ChevronDown,
+  Download,
   Layers3,
   LoaderCircle,
   Mail,
   Search,
 } from "lucide-react";
+import { orderCompleteStorageKey, thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
 
 type ReceiptData = {
   fullName: string;
@@ -21,8 +23,6 @@ type ReceiptData = {
   submissionDetails?: Record<string, string | string[]>;
   submittedAt: string;
 };
-
-const thankYouStorageKey = "siteTarikThankYouSubmission";
 
 const fallbackReceipt: ReceiptData = {
   fullName: "Pending submission",
@@ -39,6 +39,16 @@ const nextSteps = [
   { title: "SEO", description: "Basic SEO applied.", icon: Search },
   { title: "Delivery", description: "Sent to your email.", icon: Mail },
 ];
+
+const oneHourMs = 60 * 60 * 1000;
+
+function formatCountdown(remainingMs: number) {
+  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
 
 const blogFieldLabels: Array<[string, string]> = [
   ["briefBusinessDescription", "Briefly describe your business"],
@@ -97,16 +107,35 @@ function DetailRow({
   );
 }
 
-export function ThankYouPage() {
+export function ThankYouPage({
+  stripeSessionId: initialStripeSessionId,
+  isActiveCheckout = false,
+}: {
+  stripeSessionId?: string;
+  isActiveCheckout?: boolean;
+}) {
+  const [stripeSessionId, setStripeSessionId] = useState<string | null>(
+    initialStripeSessionId ?? null,
+  );
   const [receipt, setReceipt] = useState<ReceiptData>(fallbackReceipt);
-  const [phase, setPhase] = useState<"loading" | "confirming" | "ready">("loading");
+  const [phase, setPhase] = useState<"loading" | "confirming" | "ready">(
+    isActiveCheckout ? "loading" : "ready",
+  );
   const [isBlogReviewOpen, setIsBlogReviewOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [stripeReceiptUrl, setStripeReceiptUrl] = useState<string | null>(null);
+  const [isResolvingReceipt, setIsResolvingReceipt] = useState(false);
   const isBlogPackage = receipt.selectedPackageValue === "blog";
+  const confirmationPaddingClass = isBlogPackage
+    ? "pb-3 sm:pb-4 lg:pb-4"
+    : "pb-4 sm:pb-5 lg:pb-5";
 
   useEffect(() => {
-    let confirmTimeoutId: number | undefined;
+    if (initialStripeSessionId) {
+      window.sessionStorage.setItem(thankYouStripeSessionKey, initialStripeSessionId);
+    }
 
-    const loadTimeoutId = window.setTimeout(() => {
+    if (!isActiveCheckout) {
       try {
         const raw = window.sessionStorage.getItem(thankYouStorageKey);
 
@@ -120,6 +149,38 @@ export function ThankYouPage() {
         }
       } catch {
         setReceipt(fallbackReceipt);
+      }
+
+      setPhase("ready");
+      return;
+    }
+
+    let confirmTimeoutId: number | undefined;
+
+    const loadTimeoutId = window.setTimeout(() => {
+      try {
+        const raw = window.sessionStorage.getItem(thankYouStorageKey);
+        const storedStripeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<ReceiptData>;
+
+          setReceipt({
+            ...fallbackReceipt,
+            ...parsed,
+          });
+        }
+
+        if (storedStripeSessionId) {
+          setStripeSessionId(storedStripeSessionId);
+        }
+      } catch {
+        setReceipt(fallbackReceipt);
+      }
+
+      if (!isActiveCheckout) {
+        setPhase("ready");
+        return;
       }
 
       setPhase("confirming");
@@ -136,7 +197,7 @@ export function ThankYouPage() {
         window.clearTimeout(confirmTimeoutId);
       }
     };
-  }, []);
+  }, [initialStripeSessionId, isActiveCheckout]);
 
   useEffect(() => {
     const applyScrollLock = () => {
@@ -158,21 +219,110 @@ export function ThankYouPage() {
     };
   }, [isBlogPackage, isBlogReviewOpen]);
 
+  useEffect(() => {
+    if (phase !== "ready" || !receipt.submittedAt) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [phase, receipt.submittedAt]);
+
+  useEffect(() => {
+    if (phase !== "ready" || stripeReceiptUrl || !stripeSessionId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const resolveReceipt = async () => {
+      setIsResolvingReceipt(true);
+
+      try {
+        const response = await fetch(
+          `/api/stripe/receipt?session_id=${encodeURIComponent(stripeSessionId)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+
+        const payload = (await response.json()) as { receiptUrl?: string };
+
+        if (response.ok && payload.receiptUrl) {
+          setStripeReceiptUrl(payload.receiptUrl);
+        }
+      } catch {
+        // If Stripe receipt lookup fails, the button stays visible and will retry on click.
+      } finally {
+        setIsResolvingReceipt(false);
+      }
+    };
+
+    void resolveReceipt();
+
+    return () => {
+      controller.abort();
+    };
+  }, [phase, stripeReceiptUrl, stripeSessionId]);
+
+  useEffect(() => {
+    if (phase !== "ready" || !stripeSessionId) {
+      return;
+    }
+
+    const orderCompleteValue = JSON.stringify({
+      sessionId: stripeSessionId,
+      completedAt: new Date().toISOString(),
+    });
+
+    window.localStorage.setItem(orderCompleteStorageKey, orderCompleteValue);
+  }, [phase, stripeSessionId]);
+
   const receivedAt = receipt.submittedAt
     ? new Date(receipt.submittedAt).toLocaleString(undefined, {
         dateStyle: "medium",
         timeStyle: "short",
       })
     : "";
-  const expectedCompletionTime = receipt.submittedAt
-    ? new Date(new Date(receipt.submittedAt).getTime() + 60 * 60 * 1000).toLocaleTimeString(
-        undefined,
-        {
-          hour: "numeric",
-          minute: "2-digit",
-        },
-      )
+  const countdownLabel = receipt.submittedAt
+    ? formatCountdown(new Date(receipt.submittedAt).getTime() + oneHourMs - now)
     : "";
+
+  const handleDownloadReceipt = async () => {
+    if (!stripeSessionId) {
+      return;
+    }
+
+    if (!stripeReceiptUrl) {
+      setIsResolvingReceipt(true);
+
+      try {
+        const response = await fetch(
+          `/api/stripe/receipt?session_id=${encodeURIComponent(stripeSessionId)}`,
+        );
+        const payload = (await response.json()) as { receiptUrl?: string };
+
+        if (!response.ok || !payload.receiptUrl) {
+          return;
+        }
+
+        setStripeReceiptUrl(payload.receiptUrl);
+        window.open(payload.receiptUrl, "_blank", "noopener,noreferrer");
+        return;
+      } catch {
+        return;
+      } finally {
+        setIsResolvingReceipt(false);
+      }
+    }
+
+    window.open(stripeReceiptUrl, "_blank", "noopener,noreferrer");
+  };
 
   if (phase === "loading") {
     return (
@@ -222,7 +372,7 @@ export function ThankYouPage() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[var(--surface)]">
-      <header className="fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,color,box-shadow] duration-300 border-b border-black/8 bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-black/8 bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)] transition-[background-color,border-color,color,box-shadow] duration-300">
         <div className="mx-auto w-full max-w-[1230px] px-5 py-7 sm:px-7 lg:px-6">
           <div className="flex items-center">
             <Link
@@ -236,7 +386,7 @@ export function ThankYouPage() {
       </header>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1230px] flex-col px-6 pb-5 pt-[88px] sm:px-8 sm:pt-[88px] lg:px-10 lg:pt-[88px]">
-        <section className="grid flex-1 items-start gap-8 py-6 pb-12 lg:grid-cols-[0.98fr_1.02fr] lg:py-8 lg:pb-14">
+        <section className="grid flex-1 items-start gap-8 py-6 pb-12 lg:grid-cols-[0.98fr_1.02fr] lg:items-stretch lg:py-8 lg:pb-14">
           <div
             className={`flex h-full flex-col transition-all duration-700 ${
               phase === "ready" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
@@ -247,11 +397,25 @@ export function ThankYouPage() {
                 We&apos;re on it.
               </h1>
               <p className="max-w-[28rem] text-base leading-7 text-[var(--muted)] sm:text-lg">
-                Preparing your website handoff for final delivery.
+                Preparing your website handoff for final delivery.{" "}
+                <Link
+                  href="https://wa.me/60123456789"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[var(--foreground)] transition-colors duration-200 hover:text-[#25D366]"
+                >
+                  <span className="md:hidden">Questions? WhatsApp us.</span>
+                  <span className="hidden items-center gap-1 md:inline-flex group">
+                    <span>Questions?</span>
+                    <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity,transform] duration-200 ease-out group-hover:max-w-[7.5rem] group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:max-w-[7.5rem] group-focus-visible:translate-x-0.5 group-focus-visible:opacity-100">
+                      WhatsApp us.
+                    </span>
+                  </span>
+                </Link>
               </p>
             </div>
 
-            <div className="mt-2.5 rounded-[2rem] border border-[var(--border)] bg-white p-6 shadow-[0_10px_28px_rgba(0,0,0,0.05)] sm:p-7 lg:mt-2.5">
+            <div className="mt-4 rounded-[2rem] border border-[var(--border)] bg-white p-6 shadow-[0_10px_28px_rgba(0,0,0,0.05)] sm:mt-5 sm:p-7 lg:mt-5">
               <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
@@ -286,9 +450,9 @@ export function ThankYouPage() {
                           <h3 className="text-sm font-semibold text-[var(--foreground)]">
                             {step.title}
                           </h3>
-                          {isPrepStep && expectedCompletionTime ? (
+                          {isPrepStep && countdownLabel ? (
                             <span className="inline-flex w-fit items-center rounded-full border border-[rgba(238,32,40,0.14)] bg-[var(--gold-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[rgba(17,17,17,0.68)]">
-                              ETA {expectedCompletionTime}
+                              ETA {countdownLabel}
                             </span>
                           ) : null}
                         </div>
@@ -308,7 +472,7 @@ export function ThankYouPage() {
           </div>
 
           <aside
-            className={`h-fit rounded-[2rem] border border-[var(--border)] bg-white p-6 pb-10 shadow-[0_10px_28px_rgba(0,0,0,0.05)] transition-all duration-700 sm:p-7 sm:pb-12 lg:sticky lg:top-5 lg:pb-[5.75rem] ${
+            className={`h-full rounded-[2rem] border border-[var(--border)] bg-white p-6 shadow-[0_10px_28px_rgba(0,0,0,0.05)] transition-all duration-700 sm:p-7 lg:sticky lg:top-5 ${confirmationPaddingClass} ${
               phase === "ready" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
             }`}
           >
@@ -317,7 +481,7 @@ export function ThankYouPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
                   Submission Confirmation
                 </p>
-                <h2 className="mt-1.5 font-[family-name:var(--font-heading)] text-[1.75rem] leading-[1.02] tracking-[-0.04em]">
+                <h2 className="mt-2.5 font-[family-name:var(--font-heading)] text-[1.75rem] leading-[1.02] tracking-[-0.04em]">
                   Your details
                 </h2>
               </div>
@@ -369,15 +533,15 @@ export function ThankYouPage() {
               </div>
             </div>
 
-            <div className="mt-3">
+            <div className="mt-3 flex flex-col gap-3">
               <Link
                 href="https://wa.me/60123456789"
                 target="_blank"
                 rel="noreferrer"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#1fb85a] hover:shadow-[0_18px_35px_rgba(37,211,102,0.25)]"
+                className="group/whatsapp inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#1fb85a] hover:shadow-[0_10px_22px_rgba(37,211,102,0.16)]"
               >
                 WhatsApp Us
-                <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
+                <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover/whatsapp:w-4 group-hover/whatsapp:translate-x-0 group-hover/whatsapp:opacity-100 group-focus-visible/whatsapp:w-4 group-focus-visible/whatsapp:translate-x-0 group-focus-visible/whatsapp:opacity-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1280px-WhatsApp.svg.png?_=20220228223904"
@@ -388,6 +552,19 @@ export function ThankYouPage() {
                   />
                 </span>
               </Link>
+
+              <button
+                type="button"
+                onClick={() => void handleDownloadReceipt()}
+                disabled={isResolvingReceipt || !stripeSessionId}
+                className="group/receipt inline-flex w-full items-center justify-center gap-2 rounded-full border border-[rgba(238,32,40,0.16)] bg-[var(--surface-strong)] px-5 py-2.5 text-sm font-semibold text-[var(--foreground)] transition-[transform,background-color,border-color,box-shadow,color,opacity] duration-200 hover:-translate-y-0.5 hover:border-[rgba(238,32,40,0.22)] hover:bg-[var(--gold-soft)] hover:shadow-[0_12px_26px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-4 focus:ring-[rgba(238,32,40,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isResolvingReceipt ? "Loading Receipt..." : "Download Receipt"}
+                <span className="w-0 translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover/receipt:w-4 group-hover/receipt:translate-x-0 group-hover/receipt:opacity-100 group-focus-visible/receipt:w-4 group-focus-visible/receipt:translate-x-0 group-focus-visible/receipt:opacity-100">
+                  <Download className="h-4 w-4 text-[var(--gold)]" />
+                </span>
+              </button>
+
             </div>
           </aside>
         </section>
@@ -417,7 +594,7 @@ export function ThankYouPage() {
               <button
                 type="button"
                 onClick={() => setIsBlogReviewOpen(false)}
-                className="rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)] hover:text-[var(--foreground)]"
+                className="rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)] transition-[transform,background-color,border-color,color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-[rgba(238,32,40,0.18)] hover:bg-[var(--gold-soft)] hover:text-[var(--foreground)] hover:shadow-[0_10px_22px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-4 focus:ring-[rgba(238,32,40,0.08)]"
               >
                 Close
               </button>
