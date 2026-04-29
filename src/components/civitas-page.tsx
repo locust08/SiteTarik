@@ -353,6 +353,7 @@ function ShowcaseMockup({
 export function CivitasPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
+  const [openService, setOpenService] = useState<number | null>(null);
   const [headerSolid, setHeaderSolid] = useState(false);
   const [activeSection, setActiveSection] = useState("top");
   const [selectedPackage, setSelectedPackage] = useState<"core" | "blog">("core");
@@ -772,49 +773,110 @@ export function CivitasPage() {
 
             <div className="mt-14 border-y border-[var(--border)]">
               {services.map((service, index) => {
+                const isOpen = openService === index;
+                const panelId = `service-panel-${index}`;
+                const buttonId = `service-button-${index}`;
+
                 return (
-                <Reveal
-                  key={service.title}
-                  delay={80 + index * 70}
-                  className="border-b border-[var(--border)] last:border-b-0"
-                >
-                  <article
-                    className="group grid gap-4 py-7 transition-colors duration-300 ease-out sm:py-8 md:grid-cols-[80px_0.95fr_1.05fr] md:items-start md:gap-5 md:py-8 md:hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                  <Reveal
+                    key={service.title}
+                    delay={80 + index * 70}
+                    className="border-b border-[var(--border)] last:border-b-0"
                   >
-                    <span className="pt-1 text-xl font-medium tracking-[-0.04em] text-[#5b6f7a]">
-                      {service.index}
-                    </span>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] group-hover:text-[var(--foreground)]">
-                          {service.title}
-                        </h3>
-                      </div>
+                    <article
+                      className="group bg-white transition-colors duration-300 ease-out md:grid md:grid-cols-[80px_0.95fr_1.05fr] md:items-start md:gap-5 md:py-8 md:hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                    >
+                      <div className="md:hidden">
+                        <button
+                          type="button"
+                          id={buttonId}
+                          aria-controls={panelId}
+                          aria-expanded={isOpen}
+                          onClick={() =>
+                            setOpenService((current) =>
+                              current === index ? null : index,
+                            )
+                          }
+                          className={`flex w-full items-start justify-between gap-4 px-0 py-7 text-left transition-colors duration-300 ${
+                            isOpen
+                              ? "bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                              : "bg-white hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <span className="block text-sm font-medium tracking-[0.16em] text-[#5b6f7a]">
+                              {service.index}
+                            </span>
+                            <h3
+                              className="mt-2 font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] text-[var(--foreground)]"
+                            >
+                              {service.title}
+                            </h3>
+                            <span className="mt-2 block text-sm leading-6 text-[var(--muted)]">
+                              {isOpen ? "Tap to hide description" : "Tap to show description"}
+                            </span>
+                          </div>
 
-                      <div className="hidden md:flex md:h-11 md:w-11 md:items-center md:justify-center md:self-start md:rounded-full md:border md:border-[var(--border)] md:text-[var(--foreground)]/60">
-                        <ArrowRight
-                          className="h-4 w-4 transform-gpu translate-x-0 text-[var(--foreground)]/70 transition-[color,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:translate-x-[1px] group-hover:text-[#ee2028]"
-                        />
-                      </div>
-                    </div>
+                          <span
+                            className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                              isOpen
+                                ? "border-[rgba(238,32,40,0.28)] bg-[var(--gold-soft)] text-[var(--gold)]"
+                                : "border-[var(--border)] bg-white text-[rgba(17,17,17,0.72)]"
+                            }`}
+                            aria-hidden="true"
+                          >
+                            <ChevronDown
+                              className={`h-5 w-5 transition-transform duration-300 ${
+                                isOpen ? "rotate-180" : "rotate-0"
+                              }`}
+                            />
+                          </span>
+                        </button>
 
-                    <div className="md:hidden">
-                      <p className="pt-1 text-base leading-8 text-[var(--muted)]">
-                        {service.description}
-                      </p>
-                    </div>
-
-                    <div className="hidden md:block">
-                      <div className="grid grid-rows-[0fr] transition-[grid-template-rows,opacity] duration-300 ease-out opacity-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100">
-                        <div className="overflow-hidden">
-                          <p className="pt-0.5 text-base leading-8 text-[var(--muted)]">
-                            {service.description}
-                          </p>
+                        <div
+                          id={panelId}
+                          role="region"
+                          aria-labelledby={buttonId}
+                          className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                            isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                          }`}
+                        >
+                          <div className="overflow-hidden">
+                            <p className="border-t border-[var(--border)] pt-5 pb-7 text-base leading-8 text-[var(--muted)]">
+                              {service.description}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </article>
-                </Reveal>
+
+                      <span className="hidden pt-1 text-xl font-medium tracking-[-0.04em] text-[#5b6f7a] md:block">
+                        {service.index}
+                      </span>
+                      <div className="hidden items-start justify-between gap-3 md:flex">
+                        <div className="min-w-0">
+                          <h3 className="font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] group-hover:text-[var(--foreground)]">
+                            {service.title}
+                          </h3>
+                        </div>
+
+                        <div className="hidden md:flex md:h-11 md:w-11 md:items-center md:justify-center md:self-start md:rounded-full md:border md:border-[var(--border)] md:text-[var(--foreground)]/60">
+                          <ArrowRight
+                            className="h-4 w-4 transform-gpu translate-x-0 text-[var(--foreground)]/70 transition-[color,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:translate-x-[1px] group-hover:text-[#ee2028]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="hidden md:block">
+                        <div className="grid grid-rows-[0fr] transition-[grid-template-rows,opacity] duration-300 ease-out opacity-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100">
+                          <div className="overflow-hidden">
+                            <p className="pt-0.5 text-base leading-8 text-[var(--muted)]">
+                              {service.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  </Reveal>
                 );
               })}
             </div>

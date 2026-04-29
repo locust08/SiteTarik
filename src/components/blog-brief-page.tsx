@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2, ChevronDown, LoaderCircle, ThumbsUp } from "lucide-react";
-import { thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
+import {
+  blogBriefSubmittedStorageKey,
+  thankYouStorageKey,
+  thankYouStripeSessionKey,
+} from "@/lib/order-flow";
 
 type BlogBriefForm = {
   briefBusinessDescription: string;
@@ -13,6 +17,8 @@ type BlogBriefForm = {
   mainGoal: string;
   idealCustomers: string;
   topicsToCover: string;
+  preferredCTA: string;
+  customCTA: string;
   pagesToPush: string;
   additionalNotes: string;
 };
@@ -28,7 +34,28 @@ type ReceiptData = {
   submittedAt: string;
 };
 
-const minimumLoadingMs = 1500;
+type BlogBriefLockRecord = {
+  sessionId: string;
+  submittedAt: string;
+};
+
+const minimumLoadingMs = 1200;
+const lockedLoadingCheckDelayMs = 1200;
+const lockedLoadingTotalMs = 1800;
+const confirmationMs = 600;
+const fieldCharacterLimits: Record<keyof BlogBriefForm, number> = {
+  briefBusinessDescription: 280,
+  mainProductsServices: 240,
+  targetKeywords: 160,
+  targetLocation: 70,
+  mainGoal: 60,
+  idealCustomers: 200,
+  topicsToCover: 280,
+  preferredCTA: 50,
+  customCTA: 50,
+  pagesToPush: 180,
+  additionalNotes: 240,
+};
 
 const goalOptions = [
   "Get more leads",
@@ -39,6 +66,18 @@ const goalOptions = [
   "Support SEO growth",
 ];
 
+const ctaOptions = [
+  "WhatsApp us",
+  "Get a quote",
+  "Book a call",
+  "Request consultation",
+  "View package",
+  "Claim offer",
+  "Learn more",
+  "Contact us",
+  "Other CTA",
+];
+
 const initialBlogBriefForm: BlogBriefForm = {
   briefBusinessDescription: "",
   mainProductsServices: "",
@@ -47,6 +86,8 @@ const initialBlogBriefForm: BlogBriefForm = {
   mainGoal: "Get more leads",
   idealCustomers: "",
   topicsToCover: "",
+  preferredCTA: "WhatsApp us",
+  customCTA: "",
   pagesToPush: "",
   additionalNotes: "",
 };
@@ -87,6 +128,7 @@ function TextArea({
   required?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const characterLimit = fieldCharacterLimits[name];
 
   useEffect(() => {
     const element = textareaRef.current;
@@ -100,16 +142,56 @@ function TextArea({
   }, [value]);
 
   return (
-    <textarea
-      ref={textareaRef}
-      name={name}
-      rows={rows}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      required={required}
-      className="w-full resize-none overflow-hidden rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-7 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
-    />
+    <>
+      <textarea
+        ref={textareaRef}
+        name={name}
+        rows={rows}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        maxLength={characterLimit}
+        className="w-full resize-none overflow-hidden rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-7 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
+      />
+      <span className="mt-1.5 block text-right text-[0.72rem] font-medium text-[var(--muted)]/72">
+        {value.length}/{characterLimit}
+      </span>
+    </>
+  );
+}
+
+function TextInput({
+  name,
+  placeholder,
+  value,
+  onChange,
+  required = false,
+}: {
+  name: keyof BlogBriefForm;
+  placeholder: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  required?: boolean;
+}) {
+  const characterLimit = fieldCharacterLimits[name];
+
+  return (
+    <>
+      <input
+        name={name}
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        maxLength={characterLimit}
+        className="w-full rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-6 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
+      />
+      <span className="mt-1.5 block text-right text-[0.72rem] font-medium text-[var(--muted)]/72">
+        {value.length}/{characterLimit}
+      </span>
+    </>
   );
 }
 
@@ -225,11 +307,11 @@ function SelectControl({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] py-2.5 last:border-b-0">
-      <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(17,17,17,0.68)]">
+    <div className="grid gap-1.5 border-b border-[var(--border)] py-2.5 last:border-b-0 sm:grid-cols-[0.42fr_0.58fr] sm:items-start sm:gap-4">
+      <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(17,17,17,0.68)]">
         {label}
       </dt>
-      <dd className="min-w-0 break-words text-right text-sm leading-6 text-[#111111] sm:text-base">
+      <dd className="min-w-0 whitespace-normal break-words text-left text-sm leading-6 text-[#111111] [overflow-wrap:anywhere] sm:text-right sm:text-base">
         {value}
       </dd>
     </div>
@@ -265,29 +347,186 @@ function EmptyState() {
   );
 }
 
+function LockedState({ sessionId }: { sessionId: string | null }) {
+  const thankYouHref = sessionId
+    ? `/thank-you?checkout=success&blog=complete&session_id=${encodeURIComponent(sessionId)}`
+    : "/thank-you";
+
+  return (
+    <main className="relative min-h-screen bg-[var(--surface)] px-6 py-10 text-[var(--foreground)] sm:px-8 lg:px-10">
+      <div className="mx-auto flex min-h-[70vh] max-w-[760px] flex-col items-center justify-center text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
+          SEO Enhancement
+        </p>
+        <h1 className="mt-4 font-[family-name:var(--font-heading)] text-[2.5rem] leading-[1] tracking-[-0.05em] sm:text-[3.4rem]">
+          Blog brief already submitted
+        </h1>
+        <p className="mt-4 max-w-[34rem] text-base leading-8 text-[var(--muted)] sm:text-lg">
+          Your brief is locked to keep the submission accurate. View your
+          receipt and brief to review details or request corrections via
+          WhatsApp.
+        </p>
+        <Link
+          href={thankYouHref}
+          className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23]"
+        >
+          View receipt and brief
+          <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
+
+        <Link
+          href="/"
+          className="group mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--gold)] underline decoration-[rgba(238,32,40,0.32)] underline-offset-4 transition-colors duration-200 hover:text-[#d81c23] hover:decoration-[#d81c23]"
+        >
+          Back to home
+          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </main>
+  );
+}
+
+function LockedLoadingState() {
+  const [isSecured, setIsSecured] = useState(false);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setIsSecured(true);
+    }, lockedLoadingCheckDelayMs);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, []);
+
+  return (
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_24%),linear-gradient(180deg,rgba(8,8,8,0.98)_0%,rgba(18,18,18,0.98)_100%)] px-6">
+      <div className="absolute inset-0 backdrop-blur-2xl" />
+      <div className="absolute inset-0 bg-black/35" />
+      <div className="relative z-10 flex w-full max-w-[28rem] flex-col items-center rounded-[2rem] border border-white/10 bg-white/8 px-8 py-10 text-center text-white shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+        <div
+          className={`flex h-20 w-20 items-center justify-center rounded-full border shadow-[0_18px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 ${
+            isSecured
+              ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.12)] text-[#22c55e]"
+              : "border-white/12 bg-white/10 text-white"
+          }`}
+        >
+          {isSecured ? (
+            <CheckCircle2 className="h-10 w-10 animate-pulse" />
+          ) : (
+            <LoaderCircle className="h-9 w-9 animate-spin" />
+          )}
+        </div>
+        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
+          {isSecured ? "Brief submitted" : "Checking brief"}
+        </p>
+        <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[2.5rem] leading-[1] tracking-[-0.05em]">
+          {isSecured ? "Submission secured" : "Reviewing status"}
+        </h1>
+        <p className="mt-3 max-w-[18rem] text-sm leading-7 text-white/72">
+          {isSecured ? "Loading receipt options." : "Confirming your submitted brief."}
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function readBlogBriefLock(sessionId: string | null) {
+  if (!sessionId) {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(blogBriefSubmittedStorageKey);
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<BlogBriefLockRecord>;
+
+    if (parsed.sessionId !== sessionId) {
+      return null;
+    }
+
+    return {
+      sessionId: parsed.sessionId ?? sessionId,
+      submittedAt: parsed.submittedAt ?? "",
+    } satisfies BlogBriefLockRecord;
+  } catch {
+    return null;
+  }
+}
+
+function getBlogBriefSessionId() {
+  const params = new URLSearchParams(window.location.search);
+  const urlSessionId = params.get("session_id");
+  const storedSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+  const sessionId = urlSessionId ?? storedSessionId;
+
+  if (urlSessionId) {
+    window.sessionStorage.setItem(thankYouStripeSessionKey, urlSessionId);
+  }
+
+  return sessionId;
+}
+
+async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBriefForm, sessionId: string) {
+  const effectiveCTA = form.preferredCTA === "Other CTA" && form.customCTA.trim()
+    ? form.customCTA.trim()
+    : form.preferredCTA;
+
+  const response = await fetch("/api/stripe/session-metadata", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sessionId,
+      selectedPackage: "blog",
+      packageTitle: receipt.selectedPackage,
+      fullName: receipt.fullName,
+      businessName: receipt.businessName,
+      websiteUrl: receipt.websiteUrl,
+      emailAddress: receipt.emailAddress,
+      briefBusinessDescription: form.briefBusinessDescription,
+      mainProductsServices: form.mainProductsServices,
+      targetKeywords: form.targetKeywords,
+      targetLocation: form.targetLocation,
+      mainGoal: form.mainGoal,
+      idealCustomers: form.idealCustomers,
+      topicsToCover: form.topicsToCover,
+      preferredCTA: form.preferredCTA,
+      customCTA: form.customCTA,
+      ctaText: effectiveCTA,
+      pagesToPush: form.pagesToPush,
+      additionalNotes: form.additionalNotes,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to save Stripe metadata.");
+  }
+}
+
 export function BlogBriefPage() {
+  const [lockedSessionId, setLockedSessionId] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [form, setForm] = useState<BlogBriefForm>(initialBlogBriefForm);
   const [phase, setPhase] = useState<"loading" | "confirming" | "ready">("loading");
-  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking");
+  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied" | "locking" | "locked">(
+    "checking",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let lockTimeoutId: number | undefined;
     let confirmTimeoutId: number | undefined;
     const startedAt = Date.now();
-
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get("session_id");
-
-      if (sessionId) {
-        window.sessionStorage.setItem(thankYouStripeSessionKey, sessionId);
-      }
-    } catch {
-      // Ignore malformed URLs and keep the brief flow usable.
-    }
 
     const waitForMinimumLoadingTime = async () => {
       const elapsed = Date.now() - startedAt;
@@ -298,15 +537,43 @@ export function BlogBriefPage() {
       }
     };
 
-    const verifyPaymentAccess = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const urlSessionId = params.get("session_id");
-      const storedSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
-      const sessionId = urlSessionId ?? storedSessionId;
+    const waitForLockedLoadingTime = async () => {
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, lockedLoadingTotalMs - elapsed);
 
-      if (urlSessionId) {
-        window.sessionStorage.setItem(thankYouStripeSessionKey, urlSessionId);
+      if (remaining > 0) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));
       }
+    };
+
+    try {
+      const sessionId = getBlogBriefSessionId();
+      const existingLock = readBlogBriefLock(sessionId);
+
+      if (existingLock) {
+        lockTimeoutId = window.setTimeout(() => {
+          if (cancelled) {
+            return;
+          }
+
+          setLockedSessionId(sessionId);
+          setAccessState("locking");
+          void (async () => {
+            await waitForLockedLoadingTime();
+
+            if (!cancelled) {
+              setAccessState("locked");
+            }
+          })();
+        }, 0);
+        return;
+      }
+    } catch {
+      // Ignore malformed URLs and keep the brief flow usable.
+    }
+
+    const verifyPaymentAccess = async () => {
+      const sessionId = getBlogBriefSessionId();
 
       if (!sessionId) {
         setAccessState("denied");
@@ -373,7 +640,7 @@ export function BlogBriefPage() {
             if (!cancelled) {
               setPhase("ready");
             }
-          }, 750);
+          }, confirmationMs);
         }
       } catch {
         await waitForMinimumLoadingTime();
@@ -384,6 +651,10 @@ export function BlogBriefPage() {
 
     return () => {
       cancelled = true;
+
+      if (lockTimeoutId) {
+        window.clearTimeout(lockTimeoutId);
+      }
 
       if (confirmTimeoutId) {
         window.clearTimeout(confirmTimeoutId);
@@ -396,7 +667,7 @@ export function BlogBriefPage() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!receipt) {
@@ -415,6 +686,24 @@ export function BlogBriefPage() {
       };
 
       window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(mergedReceipt));
+      const sessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+
+      if (sessionId) {
+        try {
+          await syncBlogBriefStripeMetadata(receipt, form, sessionId);
+        } catch (metadataError) {
+          console.warn("Unable to sync blog brief Stripe metadata.", metadataError);
+        }
+
+        window.localStorage.setItem(
+          blogBriefSubmittedStorageKey,
+          JSON.stringify({
+            sessionId,
+            submittedAt: mergedReceipt.submittedAt,
+          } satisfies BlogBriefLockRecord),
+        );
+      }
+
       const stripeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
       const thankYouUrl = stripeSessionId
         ? `/thank-you?checkout=success&blog=complete&session_id=${encodeURIComponent(stripeSessionId)}`
@@ -429,6 +718,14 @@ export function BlogBriefPage() {
 
   if (accessState === "denied") {
     return <EmptyState />;
+  }
+
+  if (accessState === "locking") {
+    return <LockedLoadingState />;
+  }
+
+  if (accessState === "locked") {
+    return <LockedState sessionId={lockedSessionId} />;
   }
 
   if (phase === "loading") {
@@ -624,6 +921,28 @@ export function BlogBriefPage() {
                     rows={2}
                   />
                 </label>
+
+                <label className="block">
+                  <FieldLabel optional>Preferred CTA</FieldLabel>
+                  <SelectControl
+                    name="preferredCTA"
+                    value={form.preferredCTA}
+                    onChange={handleChange}
+                    options={ctaOptions}
+                  />
+                </label>
+
+                {form.preferredCTA === "Other CTA" ? (
+                  <label className="block">
+                    <FieldLabel optional>Custom CTA</FieldLabel>
+                    <TextInput
+                      name="customCTA"
+                      placeholder="Example: Check availability, Start my project, Talk to our team"
+                      value={form.customCTA}
+                      onChange={handleChange}
+                    />
+                  </label>
+                ) : null}
 
                 <div className="grid gap-5 md:grid-cols-2">
                   <label className="block">

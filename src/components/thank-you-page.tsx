@@ -41,6 +41,8 @@ const nextSteps = [
 ];
 
 const oneHourMs = 60 * 60 * 1000;
+const loadingMs = 1200;
+const confirmationMs = 600;
 
 function formatCountdown(remainingMs: number) {
   const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
@@ -58,6 +60,7 @@ const blogFieldLabels: Array<[string, string]> = [
   ["mainGoal", "Main goal of the blog pages"],
   ["idealCustomers", "Ideal customers"],
   ["topicsToCover", "Topics to cover"],
+  ["preferredCTA", "Preferred CTA"],
   ["pagesToPush", "Pages or offers to push"],
   ["additionalNotes", "Additional notes"],
 ];
@@ -65,23 +68,16 @@ const blogFieldLabels: Array<[string, string]> = [
 function SummaryRow({
   label,
   value,
-  truncateValue = false,
 }: {
   label: string;
   value: string;
-  truncateValue?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] py-2.5 last:border-b-0">
-      <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(17,17,17,0.68)]">
+    <div className="grid gap-1.5 border-b border-[var(--border)] py-2.5 last:border-b-0 sm:grid-cols-[0.42fr_0.58fr] sm:items-start sm:gap-4">
+      <dt className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(17,17,17,0.68)]">
         {label}
       </dt>
-      <dd
-        title={truncateValue ? value : undefined}
-        className={`min-w-0 text-right text-sm leading-6 text-[#111111] sm:text-base ${
-          truncateValue ? "max-w-[58%] truncate" : "break-words"
-        }`}
-      >
+      <dd className="min-w-0 whitespace-normal break-words text-left text-sm leading-6 text-[#111111] [overflow-wrap:anywhere] sm:text-right sm:text-base">
         {value}
       </dd>
     </div>
@@ -100,7 +96,7 @@ function DetailRow({
       <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgba(17,17,17,0.68)]">
         {label}
       </dt>
-      <dd className="text-sm leading-6 text-[#111111] sm:text-right">
+      <dd className="min-w-0 whitespace-normal break-words text-sm leading-6 text-[#111111] [overflow-wrap:anywhere] sm:text-right">
         {value}
       </dd>
     </div>
@@ -138,6 +134,7 @@ export function ThankYouPage({
     if (!isActiveCheckout) {
       try {
         const raw = window.sessionStorage.getItem(thankYouStorageKey);
+        const storedStripeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
 
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<ReceiptData>;
@@ -146,6 +143,10 @@ export function ThankYouPage({
             ...fallbackReceipt,
             ...parsed,
           });
+        }
+
+        if (!initialStripeSessionId && storedStripeSessionId) {
+          setStripeSessionId(storedStripeSessionId);
         }
       } catch {
         setReceipt(fallbackReceipt);
@@ -187,8 +188,8 @@ export function ThankYouPage({
 
       confirmTimeoutId = window.setTimeout(() => {
         setPhase("ready");
-      }, 750);
-    }, 850);
+      }, confirmationMs);
+    }, loadingMs);
 
     return () => {
       window.clearTimeout(loadTimeoutId);
@@ -493,7 +494,7 @@ export function ThankYouPage({
             <dl className="mt-2.5">
               <SummaryRow label="Full Name" value={receipt.fullName} />
               <SummaryRow label="Business Name" value={receipt.businessName} />
-              <SummaryRow label="Website URL" value={receipt.websiteUrl} truncateValue />
+              <SummaryRow label="Website URL" value={receipt.websiteUrl} />
               <SummaryRow label="Email" value={receipt.emailAddress} />
               <SummaryRow label="Package" value={receipt.selectedPackage} />
             </dl>
@@ -604,7 +605,13 @@ export function ThankYouPage({
               <div className="grid gap-4">
                 {blogFieldLabels.map(([key, label]) => {
                   const rawValue = receipt.submissionDetails?.[key];
-                  const value = Array.isArray(rawValue)
+                  const rawCustomCTA = receipt.submissionDetails?.customCTA;
+                  const customCTA = Array.isArray(rawCustomCTA)
+                    ? rawCustomCTA.join(", ")
+                    : rawCustomCTA;
+                  const value = key === "preferredCTA" && rawValue === "Other CTA" && customCTA?.trim()
+                    ? customCTA
+                    : Array.isArray(rawValue)
                     ? rawValue.length > 0
                       ? rawValue.join(", ")
                       : "Not specified"

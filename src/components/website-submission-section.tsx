@@ -7,7 +7,17 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { ctaClassName } from "@/components/cta-link";
-import { orderCompleteStorageKey, thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
+import {
+  blogBriefSubmittedStorageKey,
+  orderCompleteStorageKey,
+  thankYouStorageKey,
+  thankYouStripeSessionKey,
+} from "@/lib/order-flow";
+import {
+  buildBrowserTrackingMetadata,
+  dispatchSiteTarikAnalyticsEvent,
+  readTrackingSnapshotFromBrowser,
+} from "@/lib/tracking/browser";
 
 type PackagePlan = "core" | "blog";
 
@@ -86,6 +96,36 @@ const mainGoalOptions = [
   "Support SEO growth",
 ];
 
+const fieldCharacterLimits: Record<keyof WebsiteSubmissionForm, number> = {
+  fullName: 80,
+  businessName: 70,
+  websiteUrl: 200,
+  emailAddress: 80,
+  businessType: 80,
+  briefBusinessDescription: 320,
+  mainProductsServices: 280,
+  industry: 100,
+  differentiator: 260,
+  priorityServices: 260,
+  idealCustomers: 240,
+  customerProblems: 300,
+  targetLocation: 80,
+  contentLanguage: 80,
+  targetKeywords: 200,
+  topicsToCover: 320,
+  topicsToAvoid: 240,
+  competitorWebsites: 300,
+  preferredContentTypes: 500,
+  toneOfWriting: 120,
+  topicDirection: 120,
+  keyPointsToRepeat: 320,
+  mainGoal: 80,
+  preferredCTA: 80,
+  pagesToPush: 240,
+  restrictions: 300,
+  additionalNotes: 320,
+};
+
 const initialWebsiteSubmissionForm: WebsiteSubmissionForm = {
   fullName: "",
   businessName: "",
@@ -141,6 +181,7 @@ function TextInput({
   value,
   onChange,
   required = false,
+  helperText,
 }: {
   name: keyof WebsiteSubmissionForm;
   type?: string;
@@ -148,17 +189,29 @@ function TextInput({
   value: string;
   onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   required?: boolean;
+  helperText?: string;
 }) {
+  const characterLimit = fieldCharacterLimits[name];
+
   return (
-    <input
-      name={name}
-      type={type}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      required={required}
-      className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
-    />
+    <>
+      <input
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        maxLength={characterLimit}
+        className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
+      />
+      <div className="mt-1.5 flex min-h-5 items-center justify-between gap-3 text-[0.72rem] font-medium leading-5 text-[var(--muted)]/72">
+        <span>{helperText}</span>
+        <span className="ml-auto text-right">
+          {value.length}/{characterLimit}
+        </span>
+      </div>
+    </>
   );
 }
 
@@ -178,6 +231,7 @@ function TextArea({
   required?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const characterLimit = fieldCharacterLimits[name];
 
   useEffect(() => {
     const element = textareaRef.current;
@@ -191,16 +245,22 @@ function TextArea({
   }, [value]);
 
   return (
-    <textarea
-      ref={textareaRef}
-      name={name}
-      rows={rows}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      required={required}
-      className="w-full resize-none overflow-hidden rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-7 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
-    />
+    <>
+      <textarea
+        ref={textareaRef}
+        name={name}
+        rows={rows}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        maxLength={characterLimit}
+        className="w-full resize-none overflow-hidden rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-base leading-7 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
+      />
+      <span className="mt-1.5 block text-right text-[0.72rem] font-medium text-[var(--muted)]/72">
+        {value.length}/{characterLimit}
+      </span>
+    </>
   );
 }
 
@@ -442,6 +502,16 @@ export function WebsiteSubmissionSection({
     setSubmitError(null);
     setIsSubmitting(true);
 
+    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
+    if (trackingSnapshot) {
+      dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_started", {
+        ...buildBrowserTrackingMetadata(trackingSnapshot),
+        selected_package: selectedPackage,
+        business_type: websiteForm.businessType,
+      });
+    }
+
     const packageDetails = packagePlans.find((plan) => plan.value === selectedPackage);
     const receiptData = {
       fullName: websiteForm.fullName,
@@ -469,10 +539,16 @@ export function WebsiteSubmissionSection({
           websiteUrl: websiteForm.websiteUrl,
           emailAddress: websiteForm.emailAddress,
           targetLocation: websiteForm.targetLocation,
+          tracking: trackingSnapshot ?? undefined,
         }),
       });
 
-      const payload = (await response.json()) as { url?: string; error?: string };
+      const payload = (await response.json()) as {
+        url?: string;
+        error?: string;
+        id?: string;
+        receiptCode?: string;
+      };
 
       if (!response.ok) {
         throw new Error(payload.error ?? "We could not start the checkout flow.");
@@ -480,6 +556,15 @@ export function WebsiteSubmissionSection({
 
       if (!payload.url) {
         throw new Error("Checkout was created without a redirect URL.");
+      }
+
+      if (trackingSnapshot) {
+        dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_redirected", {
+          ...buildBrowserTrackingMetadata(trackingSnapshot),
+          selected_package: selectedPackage,
+          checkout_session_id: payload.id ?? "",
+          receipt_code: payload.receiptCode ?? "",
+        });
       }
 
       window.location.assign(payload.url);
@@ -492,6 +577,7 @@ export function WebsiteSubmissionSection({
   const handleStartNewOrder = () => {
     try {
       window.localStorage.removeItem(orderCompleteStorageKey);
+      window.localStorage.removeItem(blogBriefSubmittedStorageKey);
       window.sessionStorage.removeItem(thankYouStorageKey);
       window.sessionStorage.removeItem(thankYouStripeSessionKey);
     } catch {
@@ -622,14 +708,8 @@ export function WebsiteSubmissionSection({
                     value={websiteForm.targetLocation}
                     onChange={handleWebsiteInputChange}
                     required
+                    helperText={locationDetectionState === "detecting" ? "Detecting location..." : undefined}
                   />
-                  <p className="mt-2 text-[0.72rem] leading-5 text-[var(--muted)]">
-                    {locationDetectionState === "detecting"
-                      ? "Detecting location..."
-                      : locationDetectionState === "detected"
-                        ? "Auto-detected."
-                        : "You can type it manually."}
-                  </p>
                 </label>
               </div>
             </fieldset>

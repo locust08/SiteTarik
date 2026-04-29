@@ -1,9 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Mail,
   MapPin,
-  Phone,
 } from "lucide-react";
 
 const menuLinks = [
@@ -14,16 +12,6 @@ const menuLinks = [
 ];
 
 const contactLinks = [
-  {
-    icon: Mail,
-    label: "testing@gmail.com",
-    href: "mailto:testing@gmail.com",
-  },
-  {
-    icon: Phone,
-    label: "+01 23 456 789",
-    href: "tel:+123456789",
-  },
   {
     icon: MapPin,
     label: "Petaling Jaya, Selangor",

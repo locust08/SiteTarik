@@ -1,13 +1,8 @@
 import type { AppProps } from "next/app";
-import { Manrope } from "next/font/google";
 import Head from "next/head";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
+import { bodyFont } from "@/lib/manrope-font";
 import "@/app/globals.css";
-
-const bodyFont = Manrope({
-  variable: "--font-body",
-  subsets: ["latin"],
-});
 
 export default function App({ Component, pageProps }: AppProps) {
   return (

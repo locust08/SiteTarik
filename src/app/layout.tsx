@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import Script from "next/script";
+import { Suspense } from "react";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
+import { SiteTarikAnalytics } from "@/components/site-tarik-analytics";
+import { bodyFont } from "@/lib/manrope-font";
+import { getSiteTarikAnalyticsConfig } from "@/lib/site-tarik-analytics";
 import "./globals.css";
-
-const bodyFont = Manrope({
-  variable: "--font-body",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "SiteTarik | Get More From Your Website",
@@ -24,10 +23,65 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const analyticsConfig = getSiteTarikAnalyticsConfig();
+
   return (
     <html lang="en" className={`${bodyFont.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {analyticsConfig.hasGtm ? (
+          <>
+            <Script
+              id="site-tarik-gtm-bootstrap"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+`,
+              }}
+            />
+            <Script
+              id="site-tarik-gtm"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtm.js?id=${analyticsConfig.gtmId}`}
+            />
+            <noscript>
+              <iframe
+                src={`https://www.googletagmanager.com/ns.html?id=${analyticsConfig.gtmId}`}
+                height="0"
+                width="0"
+                style={{ display: "none", visibility: "hidden" }}
+                aria-hidden="true"
+                tabIndex={-1}
+              />
+            </noscript>
+          </>
+        ) : null}
+        {!analyticsConfig.hasGtm && analyticsConfig.hasGa4 ? (
+          <>
+            <Script
+              id="site-tarik-ga4"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.ga4MeasurementId}`}
+            />
+            <Script
+              id="site-tarik-ga4-init"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+window.dataLayer = window.dataLayer || [];
+function gtag(){window.dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${analyticsConfig.ga4MeasurementId}', { send_page_view: false });
+`,
+              }}
+            />
+          </>
+        ) : null}
         {children}
+        <Suspense fallback={null}>
+          <SiteTarikAnalytics />
+        </Suspense>
         <FloatingWhatsApp />
       </body>
     </html>

@@ -1,5 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Tracking Setup
+
+SiteTarik now supports GTM, GA4, and attribution persistence for the checkout flow.
+
+Public env vars:
+
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_GTM_ID`
+- `NEXT_PUBLIC_GA4_MEASUREMENT_ID`
+
+Required deployment notes:
+
+- The visible GTM container name must be exactly `SiteTarik`.
+- Preserve the current Cloudflare Workers + OpenNext deployment model.
+- Attribution is captured in `sessionStorage`, a first-party cookie, and Stripe checkout metadata.
+- `page_view` and checkout-start events are prepared automatically, but payment success events are not force-fired on page load.
+
+If you are setting this up manually, create or update the GTM container first, then wire the resulting GTM ID and GA4 measurement ID into the public env vars above.
+
 ## Getting Started
 
 First, run the development server:

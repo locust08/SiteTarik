@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
 import { CivitasNotFound } from "@/components/civitas-not-found";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
+import { bodyFont } from "@/lib/manrope-font";
 import "./globals.css";
-
-const bodyFont = Manrope({
-  variable: "--font-body",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "404 | SiteTarik",
