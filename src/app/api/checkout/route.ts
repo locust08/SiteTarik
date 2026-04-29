@@ -24,11 +24,11 @@ type CheckoutRequest = {
   fullName?: string;
   businessName?: string;
   websiteUrl?: string;
-  emailAddress?: string;
   whatsappNumber?: string;
   whatsappConsent?: boolean;
   businessType?: string;
   targetLocation?: string;
+  submissionDetails?: Record<string, string | string[]>;
   tracking?: unknown;
 };
 
@@ -69,18 +69,27 @@ function isValidWebsiteUrl(value: string) {
   }
 }
 
-function isValidEmailAddress(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
 function isValidWhatsAppNumber(value: string) {
-  return /^\+60[0-9\s()-]{7,18}$/.test(value);
+  return /^\+60\d{9,11}$/.test(value);
 }
 
 function createReceiptCode(selectedPackage: PackagePlan) {
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(-8).toUpperCase();
 
   return `ST-${selectedPackage.toUpperCase()}-${suffix || "PENDING"}`;
+}
+
+function readSubmissionDetail(
+  submissionDetails: Record<string, string | string[]> | undefined,
+  key: string,
+) {
+  const rawValue = submissionDetails?.[key];
+
+  if (Array.isArray(rawValue)) {
+    return rawValue[0];
+  }
+
+  return rawValue;
 }
 
 export async function POST(request: Request) {
@@ -119,20 +128,36 @@ export async function POST(request: Request) {
   const fullName = trimMetadataValue(payload.fullName);
   const businessName = trimMetadataValue(payload.businessName);
   const websiteUrl = trimMetadataValue(payload.websiteUrl);
-  const emailAddress = trimMetadataValue(payload.emailAddress);
   const whatsappNumber = trimMetadataValue(payload.whatsappNumber);
   const whatsappConsent = payload.whatsappConsent === true;
-  const businessType = trimMetadataValue(payload.businessType);
-  const targetLocation = trimMetadataValue(payload.targetLocation);
+  const businessType = trimMetadataValue(
+    payload.businessType ?? readSubmissionDetail(payload.submissionDetails, "businessType"),
+  );
+  const targetLocation = trimMetadataValue(
+    payload.targetLocation ?? readSubmissionDetail(payload.submissionDetails, "targetLocation"),
+  );
+  const submissionDetails = payload.submissionDetails ?? {};
+  const submissionFullName = trimMetadataValue(readSubmissionDetail(submissionDetails, "fullName"));
+  const submissionBusinessName = trimMetadataValue(readSubmissionDetail(submissionDetails, "businessName"));
+  const submissionWebsiteUrl = trimMetadataValue(readSubmissionDetail(submissionDetails, "websiteUrl"));
+  const submissionWhatsAppNumber = trimMetadataValue(readSubmissionDetail(submissionDetails, "whatsappNumber"));
+  const submissionBusinessType = trimMetadataValue(readSubmissionDetail(submissionDetails, "businessType"));
+  const submissionTargetLocation = trimMetadataValue(readSubmissionDetail(submissionDetails, "targetLocation"));
+
+  const resolvedFullName = fullName || submissionFullName;
+  const resolvedBusinessName = businessName || submissionBusinessName;
+  const resolvedWebsiteUrl = websiteUrl || submissionWebsiteUrl;
+  const resolvedWhatsAppNumber = whatsappNumber || submissionWhatsAppNumber;
+  const resolvedBusinessType = businessType || submissionBusinessType;
+  const resolvedTargetLocation = targetLocation || submissionTargetLocation;
 
   if (
-    !fullName ||
-    !businessName ||
-    !websiteUrl ||
-    !emailAddress ||
-    !whatsappNumber ||
-    !businessType ||
-    !targetLocation
+    !resolvedFullName ||
+    !resolvedBusinessName ||
+    !resolvedWebsiteUrl ||
+    !resolvedWhatsAppNumber ||
+    !resolvedBusinessType ||
+    !resolvedTargetLocation
   ) {
     return Response.json(
       { error: "Please complete every required field before checkout." },
@@ -140,21 +165,14 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isValidWebsiteUrl(websiteUrl)) {
+  if (!isValidWebsiteUrl(resolvedWebsiteUrl)) {
     return Response.json(
       { error: "Please enter a valid website link that starts with http:// or https://." },
       { status: 400 },
     );
   }
 
-  if (!isValidEmailAddress(emailAddress)) {
-    return Response.json(
-      { error: "Please enter a valid email address." },
-      { status: 400 },
-    );
-  }
-
-  if (!isValidWhatsAppNumber(whatsappNumber)) {
+  if (!isValidWhatsAppNumber(resolvedWhatsAppNumber)) {
     return Response.json(
       { error: "Please enter a valid WhatsApp number in +60 format." },
       { status: 400 },
@@ -182,21 +200,18 @@ export async function POST(request: Request) {
     const formData = new URLSearchParams();
     formData.set("mode", packageDetails.mode);
     formData.set("allow_promotion_codes", "true");
-    formData.set("customer_email", emailAddress);
-    formData.set("client_reference_id", receiptCode);
     formData.set("success_url", `${baseUrl}${successPath}?checkout=success&session_id={CHECKOUT_SESSION_ID}`);
     formData.set("cancel_url", `${baseUrl}/#contact`);
     const orderMetadata = {
       selectedPackage,
       packageTitle: packageDetails.title,
-      fullName,
-      businessName,
-      websiteUrl,
-      emailAddress,
-      whatsappNumber,
+      fullName: resolvedFullName,
+      businessName: resolvedBusinessName,
+      websiteUrl: resolvedWebsiteUrl,
+      whatsappNumber: resolvedWhatsAppNumber,
       whatsappConsent,
-      businessType,
-      targetLocation,
+      businessType: resolvedBusinessType,
+      targetLocation: resolvedTargetLocation,
       receiptCode,
     };
 

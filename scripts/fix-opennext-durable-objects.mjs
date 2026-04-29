@@ -119,6 +119,19 @@ async function __sitetarikStripeFetch(request, env) {
   };
 
   const trimMetadataValue = (value) => value?.slice(0, 500) ?? "";
+  const isValidWebsiteUrl = (value) => {
+    try {
+      const parsedUrl = new URL(value);
+      return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+  const isValidWhatsAppNumber = (value) => /^\+60\d{9,11}$/.test(value);
+  const readSubmissionDetail = (submissionDetails, key) => {
+    const rawValue = submissionDetails?.[key];
+    return Array.isArray(rawValue) ? rawValue[0] : rawValue;
+  };
   const getTimestampIso = (timestamp) => {
     if (!timestamp || !Number.isFinite(timestamp)) {
       return null;
@@ -164,21 +177,59 @@ async function __sitetarikStripeFetch(request, env) {
     const packageDetails = packageConfig[selectedPackage];
     const baseUrl = request.headers.get("origin") || siteUrl;
     const successPath = selectedPackage === "blog" ? "/blog-brief" : "/thank-you";
+    const submissionDetails = payload?.submissionDetails ?? {};
+    const fullName = trimMetadataValue(payload?.fullName || readSubmissionDetail(submissionDetails, "fullName"));
+    const businessName = trimMetadataValue(payload?.businessName || readSubmissionDetail(submissionDetails, "businessName"));
+    const websiteUrl = trimMetadataValue(payload?.websiteUrl || readSubmissionDetail(submissionDetails, "websiteUrl"));
+    const whatsappNumber = trimMetadataValue(payload?.whatsappNumber || readSubmissionDetail(submissionDetails, "whatsappNumber"));
+    const whatsappConsent = payload?.whatsappConsent === true;
+    const businessType = trimMetadataValue(payload?.businessType || readSubmissionDetail(submissionDetails, "businessType"));
+    const targetLocation = trimMetadataValue(payload?.targetLocation || readSubmissionDetail(submissionDetails, "targetLocation"));
+
+    if (!fullName || !businessName || !websiteUrl || !whatsappNumber || !businessType || !targetLocation) {
+      return Response.json(
+        { error: "Please complete every required field before checkout." },
+        { status: 400 },
+      );
+    }
+
+    if (!isValidWebsiteUrl(websiteUrl)) {
+      return Response.json(
+        { error: "Please enter a valid website link that starts with http:// or https://." },
+        { status: 400 },
+      );
+    }
+
+    if (!isValidWhatsAppNumber(whatsappNumber)) {
+      return Response.json(
+        { error: "Please enter a valid WhatsApp number in +60 format." },
+        { status: 400 },
+      );
+    }
+
+    if (!whatsappConsent) {
+      return Response.json(
+        { error: "Please agree to be contacted through WhatsApp." },
+        { status: 400 },
+      );
+    }
+
     const formData = new URLSearchParams();
 
     formData.set("mode", packageDetails.mode);
     formData.set("allow_promotion_codes", "true");
-    formData.set("customer_email", (payload?.emailAddress || "").trim());
-    formData.set("client_reference_id", trimMetadataValue(payload?.emailAddress));
     formData.set("success_url", baseUrl + successPath + "?checkout=success&session_id={CHECKOUT_SESSION_ID}");
     formData.set("cancel_url", baseUrl + "/#contact");
     formData.set("metadata[selectedPackage]", selectedPackage);
     formData.set("metadata[packageTitle]", packageDetails.title);
-    formData.set("metadata[fullName]", trimMetadataValue(payload?.fullName));
-    formData.set("metadata[businessName]", trimMetadataValue(payload?.businessName));
-    formData.set("metadata[websiteUrl]", trimMetadataValue(payload?.websiteUrl));
-    formData.set("metadata[emailAddress]", trimMetadataValue(payload?.emailAddress));
-    formData.set("metadata[targetLocation]", trimMetadataValue(payload?.targetLocation));
+    formData.set("metadata[fullName]", fullName);
+    formData.set("metadata[businessName]", businessName);
+    formData.set("metadata[websiteUrl]", websiteUrl);
+    formData.set("metadata[whatsappNumber]", whatsappNumber);
+    formData.set("metadata[whatsappConsent]", String(whatsappConsent));
+    formData.set("metadata[businessType]", businessType);
+    formData.set("metadata[targetLocation]", targetLocation);
+    formData.set("metadata[receiptCode]", "ST-" + selectedPackage.toUpperCase() + "-" + (crypto.randomUUID().replace(/-/g, "").slice(-8).toUpperCase() || "PENDING"));
     formData.set("line_items[0][quantity]", "1");
     formData.set("line_items[0][price_data][currency]", "myr");
     formData.set("line_items[0][price_data][unit_amount]", String(packageDetails.amount));
@@ -234,7 +285,6 @@ async function __sitetarikStripeFetch(request, env) {
       fullName: trimMetadataValue(metadata.fullName),
       businessName: trimMetadataValue(metadata.businessName),
       websiteUrl: trimMetadataValue(metadata.websiteUrl),
-      emailAddress: trimMetadataValue(metadata.emailAddress),
       whatsappNumber: trimMetadataValue(metadata.whatsappNumber),
       whatsappConsent: trimMetadataValue(metadata.whatsappConsent),
       businessType: trimMetadataValue(metadata.businessType),

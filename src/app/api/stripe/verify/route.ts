@@ -64,7 +64,6 @@ export async function GET(request: Request) {
       fullName: trimMetadataValue(metadata.fullName),
       businessName: trimMetadataValue(metadata.businessName),
       websiteUrl: trimMetadataValue(metadata.websiteUrl),
-      emailAddress: trimMetadataValue(metadata.emailAddress),
       whatsappNumber: trimMetadataValue(metadata.whatsappNumber),
       whatsappConsent: trimMetadataValue(metadata.whatsappConsent),
       businessType: trimMetadataValue(metadata.businessType),

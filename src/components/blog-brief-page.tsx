@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { ArrowRight, CheckCircle2, ChevronDown, LoaderCircle, ThumbsUp } from "lucide-react";
 import {
   blogBriefSubmittedStorageKey,
+  formatSiteTarikDateTime,
   thankYouStorageKey,
   thankYouStripeSessionKey,
 } from "@/lib/order-flow";
@@ -27,10 +28,12 @@ type ReceiptData = {
   fullName: string;
   businessName: string;
   websiteUrl: string;
-  emailAddress: string;
+  whatsappNumber: string;
+  whatsappConsent?: boolean;
   selectedPackage: string;
   selectedPackageValue: "core" | "blog";
   submissionDetails?: Record<string, string | string[]>;
+  paidAt?: string;
   submittedAt: string;
 };
 
@@ -477,6 +480,21 @@ async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBrief
   const effectiveCTA = form.preferredCTA === "Other CTA" && form.customCTA.trim()
     ? form.customCTA.trim()
     : form.preferredCTA;
+  const orderDetails = {
+    selectedPackage: receipt.selectedPackageValue,
+    packageTitle: receipt.selectedPackage,
+    fullName: receipt.fullName,
+    businessName: receipt.businessName,
+    websiteUrl: receipt.websiteUrl,
+    whatsappNumber: receipt.whatsappNumber,
+    whatsappConsent: String(receipt.whatsappConsent ?? false),
+  };
+  const blogDetails = {
+    ...form,
+    preferredCTA: form.preferredCTA,
+    customCTA: form.customCTA,
+    ctaText: effectiveCTA,
+  };
 
   const response = await fetch("/api/stripe/session-metadata", {
     method: "POST",
@@ -490,7 +508,8 @@ async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBrief
       fullName: receipt.fullName,
       businessName: receipt.businessName,
       websiteUrl: receipt.websiteUrl,
-      emailAddress: receipt.emailAddress,
+      whatsappNumber: receipt.whatsappNumber,
+      whatsappConsent: receipt.whatsappConsent,
       briefBusinessDescription: form.briefBusinessDescription,
       mainProductsServices: form.mainProductsServices,
       targetKeywords: form.targetKeywords,
@@ -503,6 +522,8 @@ async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBrief
       ctaText: effectiveCTA,
       pagesToPush: form.pagesToPush,
       additionalNotes: form.additionalNotes,
+      orderDetails,
+      blogDetails,
     }),
   });
 
@@ -616,10 +637,12 @@ export function BlogBriefPage() {
               fullName: parsed.fullName ?? "",
               businessName: parsed.businessName ?? "",
               websiteUrl: parsed.websiteUrl ?? "",
-              emailAddress: parsed.emailAddress ?? "",
+              whatsappNumber: parsed.whatsappNumber ?? "",
+              whatsappConsent: parsed.whatsappConsent ?? false,
               selectedPackage: parsed.selectedPackage ?? "SEO Enhancement",
               selectedPackageValue: "blog",
               submissionDetails: parsed.submissionDetails ?? undefined,
+              paidAt: parsed.paidAt ?? parsed.submittedAt ?? "",
               submittedAt: parsed.submittedAt ?? new Date().toISOString(),
             });
 
@@ -681,7 +704,13 @@ export function BlogBriefPage() {
     try {
       const mergedReceipt: ReceiptData = {
         ...receipt,
-        submissionDetails: form,
+        submissionDetails: {
+          ...(receipt.submissionDetails ?? {}),
+          ...form,
+          whatsappNumber: receipt.whatsappNumber,
+          whatsappConsent: String(receipt.whatsappConsent ?? false),
+        },
+        paidAt: receipt.paidAt ?? receipt.submittedAt,
         submittedAt: new Date().toISOString(),
       };
 
@@ -777,6 +806,12 @@ export function BlogBriefPage() {
     return <EmptyState />;
   }
 
+  const paymentTime = receipt.paidAt
+    ? formatSiteTarikDateTime(receipt.paidAt)
+    : receipt.submittedAt
+      ? formatSiteTarikDateTime(receipt.submittedAt)
+      : "";
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[var(--surface)] text-[var(--foreground)]">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-black/8 bg-[rgba(255,255,255,0.92)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
@@ -813,10 +848,11 @@ export function BlogBriefPage() {
                 Your details
               </p>
               <dl className="mt-3">
+                {paymentTime ? <SummaryRow label="Paid At (MYT)" value={paymentTime} /> : null}
                 <SummaryRow label="Full Name" value={receipt.fullName || "Not provided"} />
                 <SummaryRow label="Business Name" value={receipt.businessName || "Not provided"} />
                 <SummaryRow label="Website URL" value={receipt.websiteUrl || "Not provided"} />
-                <SummaryRow label="Email" value={receipt.emailAddress || "Not provided"} />
+                <SummaryRow label="WhatsApp" value={receipt.whatsappNumber || "Not provided"} />
                 <SummaryRow label="Package" value={receipt.selectedPackage} />
               </dl>
             </div>

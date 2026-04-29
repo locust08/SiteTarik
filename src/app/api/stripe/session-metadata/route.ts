@@ -9,6 +9,8 @@ import {
   logServerEvent,
 } from "@/lib/server-debug";
 
+type StripeMetadataValue = string | string[] | number | boolean | null | undefined;
+
 type BlogMetadataRequest = {
   sessionId?: string;
   selectedPackage?: string;
@@ -16,7 +18,6 @@ type BlogMetadataRequest = {
   fullName?: string;
   businessName?: string;
   websiteUrl?: string;
-  emailAddress?: string;
   whatsappNumber?: string;
   whatsappConsent?: boolean | string;
   businessType?: string;
@@ -38,8 +39,8 @@ type BlogMetadataRequest = {
   pagesToPush?: string;
   additionalNotes?: string;
   receiptCode?: string;
-  orderDetails?: Record<string, string | string[]>;
-  blogDetails?: Record<string, string | string[]>;
+  orderDetails?: Record<string, StripeMetadataValue>;
+  blogDetails?: Record<string, StripeMetadataValue>;
 };
 
 function getStringParam(value: string | string[] | undefined) {
@@ -54,6 +55,21 @@ function trimMetadataValue(value: string | undefined) {
   return value?.trim().slice(0, 120) ?? "";
 }
 
+function getMetadataValue(
+  payloadValue: StripeMetadataValue,
+  sessionValue: string | undefined,
+) {
+  if (payloadValue === null || payloadValue === undefined) {
+    return trimMetadataValue(sessionValue);
+  }
+
+  if (Array.isArray(payloadValue)) {
+    return trimMetadataValue(payloadValue.join(", "));
+  }
+
+  return trimMetadataValue(String(payloadValue));
+}
+
 function isPaidSession(session: { status?: string; payment_status?: string }) {
   return session.status === "complete" && session.payment_status === "paid";
 }
@@ -62,22 +78,45 @@ function buildOrderMetadata(
   payload: BlogMetadataRequest,
   sessionMetadata: Record<string, string | undefined>,
 ) {
+  const orderDetails = payload.orderDetails ?? {};
+
   return {
-    selectedPackage: trimMetadataValue(payload.selectedPackage ?? sessionMetadata.selectedPackage),
-    packageTitle: trimMetadataValue(payload.packageTitle ?? sessionMetadata.packageTitle),
-    fullName: trimMetadataValue(payload.fullName ?? sessionMetadata.fullName),
-    businessName: trimMetadataValue(payload.businessName ?? sessionMetadata.businessName),
-    websiteUrl: trimMetadataValue(payload.websiteUrl ?? sessionMetadata.websiteUrl),
-    emailAddress: trimMetadataValue(payload.emailAddress ?? sessionMetadata.emailAddress),
-    whatsappNumber: trimMetadataValue(payload.whatsappNumber ?? sessionMetadata.whatsappNumber),
-    whatsappConsent: trimMetadataValue(
-      typeof payload.whatsappConsent === "boolean"
-        ? String(payload.whatsappConsent)
-        : payload.whatsappConsent ?? sessionMetadata.whatsappConsent,
+    selectedPackage: getMetadataValue(
+      payload.selectedPackage ?? orderDetails.selectedPackage,
+      sessionMetadata.selectedPackage,
     ),
-    businessType: trimMetadataValue(payload.businessType ?? sessionMetadata.businessType),
-    targetLocation: trimMetadataValue(payload.targetLocation ?? sessionMetadata.targetLocation),
-    receiptCode: trimMetadataValue(payload.receiptCode ?? sessionMetadata.receiptCode),
+    packageTitle: getMetadataValue(
+      payload.packageTitle ?? orderDetails.packageTitle,
+      sessionMetadata.packageTitle,
+    ),
+    fullName: getMetadataValue(payload.fullName ?? orderDetails.fullName, sessionMetadata.fullName),
+    businessName: getMetadataValue(
+      payload.businessName ?? orderDetails.businessName,
+      sessionMetadata.businessName,
+    ),
+    websiteUrl: getMetadataValue(payload.websiteUrl ?? orderDetails.websiteUrl, sessionMetadata.websiteUrl),
+    whatsappNumber: getMetadataValue(
+      payload.whatsappNumber ?? orderDetails.whatsappNumber,
+      sessionMetadata.whatsappNumber,
+    ),
+    whatsappConsent: getMetadataValue(
+      typeof payload.whatsappConsent !== "undefined"
+        ? payload.whatsappConsent
+        : orderDetails.whatsappConsent,
+      sessionMetadata.whatsappConsent,
+    ),
+    businessType: getMetadataValue(
+      payload.businessType ?? orderDetails.businessType,
+      sessionMetadata.businessType,
+    ),
+    targetLocation: getMetadataValue(
+      payload.targetLocation ?? orderDetails.targetLocation,
+      sessionMetadata.targetLocation,
+    ),
+    receiptCode: getMetadataValue(
+      payload.receiptCode ?? orderDetails.receiptCode,
+      sessionMetadata.receiptCode,
+    ),
   };
 }
 
@@ -85,40 +124,80 @@ function buildBlogMetadata(
   payload: BlogMetadataRequest,
   sessionMetadata: Record<string, string | undefined>,
 ) {
-  const preferredCTA = trimMetadataValue(payload.preferredCTA ?? sessionMetadata.preferredCTA);
-  const customCTA = trimMetadataValue(payload.customCTA ?? sessionMetadata.customCTA);
+  const blogDetails = payload.blogDetails ?? {};
+  const preferredCTA = getMetadataValue(
+    payload.preferredCTA ?? blogDetails.preferredCTA,
+    sessionMetadata.preferredCTA,
+  );
+  const customCTA = getMetadataValue(
+    payload.customCTA ?? blogDetails.customCTA,
+    sessionMetadata.customCTA,
+  );
   const ctaText = trimMetadataValue(
     preferredCTA === "Other CTA" && customCTA
       ? customCTA
-      : payload.ctaText ?? sessionMetadata.ctaText ?? preferredCTA,
+      : getMetadataValue(payload.ctaText ?? blogDetails.ctaText, sessionMetadata.ctaText) || preferredCTA,
   );
 
   return {
     briefBusinessDescription: trimMetadataValue(
-      payload.briefBusinessDescription ?? sessionMetadata.briefBusinessDescription,
+      getMetadataValue(
+        payload.briefBusinessDescription ?? blogDetails.briefBusinessDescription,
+        sessionMetadata.briefBusinessDescription,
+      ),
     ),
     mainProductsServices: trimMetadataValue(
-      payload.mainProductsServices ?? sessionMetadata.mainProductsServices,
+      getMetadataValue(
+        payload.mainProductsServices ?? blogDetails.mainProductsServices,
+        sessionMetadata.mainProductsServices,
+      ),
     ),
-    mainGoal: trimMetadataValue(payload.mainGoal ?? sessionMetadata.mainGoal),
-    targetKeywords: trimMetadataValue(payload.targetKeywords ?? sessionMetadata.targetKeywords),
-    targetLocation: trimMetadataValue(payload.targetLocation ?? sessionMetadata.targetLocation),
+    mainGoal: trimMetadataValue(getMetadataValue(payload.mainGoal ?? blogDetails.mainGoal, sessionMetadata.mainGoal)),
+    targetKeywords: trimMetadataValue(
+      getMetadataValue(payload.targetKeywords ?? blogDetails.targetKeywords, sessionMetadata.targetKeywords),
+    ),
+    targetLocation: trimMetadataValue(
+      getMetadataValue(payload.targetLocation ?? blogDetails.targetLocation, sessionMetadata.targetLocation),
+    ),
     primaryKeyword: trimMetadataValue(
-      payload.primaryKeyword ?? sessionMetadata.primaryKeyword ?? payload.targetKeywords,
+      getMetadataValue(
+        payload.primaryKeyword ?? blogDetails.primaryKeyword ?? payload.targetKeywords ?? blogDetails.targetKeywords,
+        sessionMetadata.primaryKeyword,
+      ),
     ),
-    secondaryKeywords: trimMetadataValue(payload.secondaryKeywords ?? sessionMetadata.secondaryKeywords),
-    toneOfWriting: trimMetadataValue(payload.toneOfWriting ?? sessionMetadata.toneOfWriting),
-    audienceShort: trimMetadataValue(payload.audienceShort ?? sessionMetadata.audienceShort),
-    idealCustomers: trimMetadataValue(payload.idealCustomers ?? sessionMetadata.idealCustomers),
-    topicsToCover: trimMetadataValue(payload.topicsToCover ?? sessionMetadata.topicsToCover),
+    secondaryKeywords: trimMetadataValue(
+      getMetadataValue(
+        payload.secondaryKeywords ?? blogDetails.secondaryKeywords,
+        sessionMetadata.secondaryKeywords,
+      ),
+    ),
+    toneOfWriting: trimMetadataValue(
+      getMetadataValue(payload.toneOfWriting ?? blogDetails.toneOfWriting, sessionMetadata.toneOfWriting),
+    ),
+    audienceShort: trimMetadataValue(
+      getMetadataValue(payload.audienceShort ?? blogDetails.audienceShort, sessionMetadata.audienceShort),
+    ),
+    idealCustomers: trimMetadataValue(
+      getMetadataValue(payload.idealCustomers ?? blogDetails.idealCustomers, sessionMetadata.idealCustomers),
+    ),
+    topicsToCover: trimMetadataValue(
+      getMetadataValue(payload.topicsToCover ?? blogDetails.topicsToCover, sessionMetadata.topicsToCover),
+    ),
     blogTopicIdeas: trimMetadataValue(
-      payload.blogTopicIdeas ?? sessionMetadata.blogTopicIdeas ?? payload.topicsToCover,
+      getMetadataValue(
+        payload.blogTopicIdeas ?? blogDetails.blogTopicIdeas ?? payload.topicsToCover ?? blogDetails.topicsToCover,
+        sessionMetadata.blogTopicIdeas,
+      ),
     ),
     preferredCTA,
     customCTA,
     ctaText,
-    pagesToPush: trimMetadataValue(payload.pagesToPush ?? sessionMetadata.pagesToPush),
-    additionalNotes: trimMetadataValue(payload.additionalNotes ?? sessionMetadata.additionalNotes),
+    pagesToPush: trimMetadataValue(
+      getMetadataValue(payload.pagesToPush ?? blogDetails.pagesToPush, sessionMetadata.pagesToPush),
+    ),
+    additionalNotes: trimMetadataValue(
+      getMetadataValue(payload.additionalNotes ?? blogDetails.additionalNotes, sessionMetadata.additionalNotes),
+    ),
   };
 }
 
@@ -175,18 +254,18 @@ export async function POST(request: Request) {
       return Response.json({ error: "Please choose a valid package." }, { status: 400 });
     }
 
-    const blogMetadata = buildBlogMetadata(payload, sessionMetadata);
-    const isBlogPackage = selectedPackage === "blog";
+  const blogMetadata = buildBlogMetadata(payload, sessionMetadata);
+  const isBlogPackage = selectedPackage === "blog";
 
-    if (isBlogPackage && !hasBlogBriefFields(blogMetadata)) {
-      return Response.json({ error: "Missing required blog brief metadata." }, { status: 400 });
-    }
+  if (isBlogPackage && !hasBlogBriefFields(blogMetadata)) {
+    return Response.json({ error: "Missing required blog brief metadata." }, { status: 400 });
+  }
 
-    const metadataFormData = new URLSearchParams();
-    appendStripeMetadata(metadataFormData, "metadata", orderFields);
-    if (isBlogPackage) {
-      appendStripeMetadata(metadataFormData, "metadata", blogMetadata);
-    }
+  const metadataFormData = new URLSearchParams();
+  appendStripeMetadata(metadataFormData, "metadata", orderFields);
+  if (isBlogPackage) {
+    appendStripeMetadata(metadataFormData, "metadata", blogMetadata);
+  }
 
     await stripeApiRequest(`/checkout/sessions/${encodeURIComponent(sessionId)}`, {
       method: "POST",

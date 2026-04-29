@@ -111,14 +111,14 @@ const services: Service[] = [
     index: "03",
     title: "Hosted Output & Delivery",
     description:
-      "The finished site is hosted, checked, and delivered via email for a simple handoff.",
-    emphasis: "delivered via email",
+      "The finished site is hosted, checked, and delivered via WhatsApp for a simple handoff.",
+    emphasis: "delivered via WhatsApp",
   },
   {
     index: "04",
     title: "Blog Add-On",
     description:
-      "Add 12 blog pages with stronger structure, weekly release scheduling for 12 weeks, basic SEO, hosting, and email delivery.",
+      "Add 12 blog pages with stronger structure, weekly release scheduling for 12 weeks, basic SEO, hosting, and WhatsApp delivery.",
     emphasis: "12 blog pages",
   },
   {
@@ -169,7 +169,7 @@ const processSteps = [
     title: (
       <>
         <span className="text-[#ee2028]">Final output link</span> is sent to
-        your email
+        your WhatsApp
       </>
     ),
   },
@@ -220,7 +220,7 @@ const faqItems: FaqItem[] = [
   },
   {
     question: "What is included in RM100/year?",
-    answer: <>RM100/year includes Basic SEO, hosting, and final website link sent to your email.</>,
+    answer: <>RM100/year includes Basic SEO, hosting, and final website link sent through WhatsApp.</>,
   },
   {
     question: "What is included in the blog add-on?",
@@ -232,7 +232,7 @@ const faqItems: FaqItem[] = [
   },
   {
     question: "How will I receive the final output?",
-    answer: <>You will receive a link via email after completion.</>,
+    answer: <>You will receive a link via WhatsApp after completion.</>,
   },
   {
     question: "Do I need technical skills?",
@@ -250,7 +250,7 @@ const pricingCoreIncludes = [
   "Website reborn",
   "Basic SEO setup",
   "Hosted output",
-  "Email delivery",
+  "WhatsApp delivery",
 ];
 
 const pricingBlogIncludes = [
@@ -259,7 +259,7 @@ const pricingBlogIncludes = [
   "Weekly release schedule",
   "Basic SEO setup",
   "Hosted output",
-  "Email delivery",
+  "WhatsApp delivery",
 ];
 
 function SectionLabel({
@@ -364,8 +364,8 @@ export function CivitasPage() {
     ? "Website Reborn + Blog Add-On"
     : "Website Reborn";
   const selectedPackageDescription = isBlogPackage
-    ? "Content generation for existing sites with stronger structure, weekly releases, basic SEO, hosting, and email delivery."
-    : "A clean reborn website with basic SEO, hosting, and email delivery.";
+    ? "Content generation for existing sites with stronger structure, weekly releases, basic SEO, hosting, and WhatsApp delivery."
+    : "A clean reborn website with basic SEO, hosting, and WhatsApp delivery.";
   const selectedPackageIncludes = isBlogPackage
     ? pricingBlogIncludes
     : pricingCoreIncludes;
@@ -771,7 +771,7 @@ export function CivitasPage() {
               </h2>
             </Reveal>
 
-            <div className="mt-14 border-y border-[var(--border)]">
+            <div className="mt-14 divide-y divide-[var(--border)] border-y border-[var(--border)]">
               {services.map((service, index) => {
                 const isOpen = openService === index;
                 const panelId = `service-panel-${index}`;
@@ -781,10 +781,13 @@ export function CivitasPage() {
                   <Reveal
                     key={service.title}
                     delay={80 + index * 70}
-                    className="border-b border-[var(--border)] last:border-b-0"
                   >
                     <article
-                      className="group bg-white transition-colors duration-300 ease-out md:grid md:grid-cols-[80px_0.95fr_1.05fr] md:items-start md:gap-5 md:py-8 md:hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                      className={`group transition-colors duration-200 ${
+                        isOpen
+                          ? "bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                          : "bg-white hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                      } md:grid md:grid-cols-[80px_0.95fr_1.05fr] md:items-start md:gap-5 md:py-8 md:hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]`}
                     >
                       <div className="md:hidden">
                         <button
@@ -797,31 +800,24 @@ export function CivitasPage() {
                               current === index ? null : index,
                             )
                           }
-                          className={`flex w-full items-start justify-between gap-4 px-0 py-7 text-left transition-colors duration-300 ${
-                            isOpen
-                              ? "bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
-                              : "bg-white hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
-                          }`}
+                          className="flex w-full items-center justify-between gap-4 py-4.5 text-left"
                         >
                           <div className="min-w-0">
                             <span className="block text-sm font-medium tracking-[0.16em] text-[#5b6f7a]">
                               {service.index}
                             </span>
                             <h3
-                              className="mt-2 font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] text-[var(--foreground)]"
+                              className="mt-2 font-[family-name:var(--font-heading)] text-[1.55rem] leading-[1.05] tracking-[-0.04em] transition-colors duration-200 sm:text-[1.75rem] text-[var(--foreground)]"
                             >
                               {service.title}
                             </h3>
-                            <span className="mt-2 block text-sm leading-6 text-[var(--muted)]">
-                              {isOpen ? "Tap to hide description" : "Tap to show description"}
-                            </span>
                           </div>
 
                           <span
                             className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
                               isOpen
-                                ? "border-[rgba(238,32,40,0.28)] bg-[var(--gold-soft)] text-[var(--gold)]"
-                                : "border-[var(--border)] bg-white text-[rgba(17,17,17,0.72)]"
+                                ? "border-[rgba(255,178,188,0.95)] bg-[rgba(255,246,247,0.96)] text-[rgba(238,32,40,0.82)]"
+                                : "border-[rgba(255,178,188,0.6)] bg-[rgba(255,246,247,0.72)] text-[rgba(17,17,17,0.72)]"
                             }`}
                             aria-hidden="true"
                           >
@@ -842,7 +838,7 @@ export function CivitasPage() {
                           }`}
                         >
                           <div className="overflow-hidden">
-                            <p className="border-t border-[var(--border)] pt-5 pb-7 text-base leading-8 text-[var(--muted)]">
+                            <p className="pb-4 text-base leading-8 text-[var(--muted)]">
                               {service.description}
                             </p>
                           </div>

@@ -25,7 +25,7 @@ type WebsiteSubmissionForm = {
   fullName: string;
   businessName: string;
   websiteUrl: string;
-  emailAddress: string;
+  whatsappNumber: string;
   businessType: string;
   briefBusinessDescription: string;
   mainProductsServices: string;
@@ -64,11 +64,11 @@ const packagePlans: Array<{
     value: "core",
     title: "Core Relaunch",
     price: "RM100 / year",
-    summary: "Best for existing websites that need a lean refresh with basic SEO, hosting, and email delivery.",
+    summary: "Best for existing websites that need a lean refresh with basic SEO, hosting, and WhatsApp delivery.",
     highlights: [
       "Website refresh prepared",
       "Basic SEO setup included",
-      "Hosted version delivered by email",
+      "Hosted version delivered on WhatsApp",
     ],
   },
   {
@@ -80,7 +80,7 @@ const packagePlans: Array<{
       "12 blog pages generated",
       "Weekly release schedule",
       "Stronger structure and layout",
-      "Basic SEO, hosting, and email delivery",
+      "Basic SEO, hosting, and WhatsApp delivery",
     ],
   },
 ];
@@ -100,7 +100,7 @@ const fieldCharacterLimits: Record<keyof WebsiteSubmissionForm, number> = {
   fullName: 80,
   businessName: 70,
   websiteUrl: 200,
-  emailAddress: 80,
+  whatsappNumber: 14,
   businessType: 80,
   briefBusinessDescription: 320,
   mainProductsServices: 280,
@@ -130,7 +130,7 @@ const initialWebsiteSubmissionForm: WebsiteSubmissionForm = {
   fullName: "",
   businessName: "",
   websiteUrl: "",
-  emailAddress: "",
+  whatsappNumber: "+60",
   businessType: "Service",
   briefBusinessDescription: "",
   mainProductsServices: "",
@@ -213,6 +213,13 @@ function TextInput({
       </div>
     </>
   );
+}
+
+function normalizeWhatsAppNumberInput(value: string) {
+  const digits = value.replace(/[^\d]/g, "");
+  const localDigits = digits.startsWith("60") ? digits.slice(2) : digits;
+
+  return `+60${localDigits.slice(0, 11)}`;
 }
 
 function TextArea({
@@ -386,6 +393,7 @@ export function WebsiteSubmissionSection({
   onPackageChange: (packagePlan: PackagePlan) => void;
 }) {
   const [websiteForm, setWebsiteForm] = useState<WebsiteSubmissionForm>(initialWebsiteSubmissionForm);
+  const [whatsappConsent, setWhatsappConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [locationDetectionState, setLocationDetectionState] = useState<
@@ -490,6 +498,14 @@ export function WebsiteSubmissionSection({
   ) => {
     const { name, value } = event.target;
 
+    if (name === "whatsappNumber") {
+      setWebsiteForm((current) => ({
+        ...current,
+        whatsappNumber: normalizeWhatsAppNumberInput(value),
+      }));
+      return;
+    }
+
     setWebsiteForm((current) => ({ ...current, [name]: value }));
   };
 
@@ -497,6 +513,14 @@ export function WebsiteSubmissionSection({
     event.preventDefault();
     if (completionState) {
       setSubmitError("Your last order is complete. Start a new order to continue.");
+      return;
+    }
+    if (!whatsappConsent) {
+      setSubmitError("Please tick the WhatsApp consent box before continuing.");
+      return;
+    }
+    if (!/^\+60\d{9,11}$/.test(websiteForm.whatsappNumber)) {
+      setSubmitError("Please enter a valid WhatsApp number in +60 format.");
       return;
     }
     setSubmitError(null);
@@ -517,10 +541,12 @@ export function WebsiteSubmissionSection({
       fullName: websiteForm.fullName,
       businessName: websiteForm.businessName,
       websiteUrl: websiteForm.websiteUrl,
-      emailAddress: websiteForm.emailAddress,
+      whatsappNumber: websiteForm.whatsappNumber,
+      whatsappConsent,
       selectedPackage: packageDetails?.title ?? selectedPackage,
       selectedPackageValue: selectedPackage,
       submissionDetails: websiteForm,
+      paidAt: new Date().toISOString(),
       submittedAt: new Date().toISOString(),
     };
 
@@ -537,8 +563,11 @@ export function WebsiteSubmissionSection({
           fullName: websiteForm.fullName,
           businessName: websiteForm.businessName,
           websiteUrl: websiteForm.websiteUrl,
-          emailAddress: websiteForm.emailAddress,
+          whatsappNumber: websiteForm.whatsappNumber,
+          whatsappConsent,
+          businessType: websiteForm.businessType,
           targetLocation: websiteForm.targetLocation,
+          submissionDetails: websiteForm,
           tracking: trackingSnapshot ?? undefined,
         }),
       });
@@ -590,6 +619,7 @@ export function WebsiteSubmissionSection({
     setLocationDetectionState("idle");
     didAttemptLocationDetect.current = false;
     setWebsiteForm(initialWebsiteSubmissionForm);
+    setWhatsappConsent(false);
   };
 
   return (
@@ -615,7 +645,7 @@ export function WebsiteSubmissionSection({
           <p className="mx-auto mt-6 max-w-[44rem] text-base leading-8 text-[var(--muted)] sm:text-lg">
             Share your website details and choose your package. We will prepare
             the hosted version with <span className="text-[#ee2028]">basic SEO</span> and send the
-            <span className="text-[#ee2028]"> final website link to your email</span>.
+            <span className="text-[#ee2028]"> final website link on WhatsApp</span>.
           </p>
         </div>
 
@@ -633,7 +663,7 @@ export function WebsiteSubmissionSection({
             </div>
 
             <form className="mt-8 space-y-8" onSubmit={handleWebsiteSubmit}>
-            <fieldset className="space-y-4">
+              <fieldset className="space-y-4">
               <legend className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
                 Required
               </legend>
@@ -676,14 +706,15 @@ export function WebsiteSubmissionSection({
                 </label>
 
                 <label className="block">
-                  <FieldLabel required>Email Address</FieldLabel>
+                  <FieldLabel required>WhatsApp Number</FieldLabel>
                   <TextInput
-                    name="emailAddress"
-                    type="email"
-                    placeholder="Work email"
-                    value={websiteForm.emailAddress}
+                    name="whatsappNumber"
+                    type="tel"
+                    placeholder="+60 12 345 6789"
+                    value={websiteForm.whatsappNumber}
                     onChange={handleWebsiteInputChange}
                     required
+                    helperText="Fixed +60 format. Enter 9 to 11 digits after the prefix."
                   />
                 </label>
               </div>
@@ -712,6 +743,19 @@ export function WebsiteSubmissionSection({
                   />
                 </label>
               </div>
+
+              <label className="flex items-start gap-3 rounded-[1rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-4">
+                <input
+                  type="checkbox"
+                  checked={whatsappConsent}
+                  onChange={(event) => setWhatsappConsent(event.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--border)] text-[var(--gold)] focus:ring-[var(--gold)]"
+                  required
+                />
+                <span className="text-sm leading-6 text-[var(--foreground)]">
+                  I agree to receive the final delivery and order updates through WhatsApp.
+                </span>
+              </label>
             </fieldset>
 
             <fieldset className="space-y-4">
@@ -919,7 +963,7 @@ export function WebsiteSubmissionSection({
                     Trust Line
                   </p>
                   <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">
-                    Final website output link will be delivered by email after
+                    Final website output link will be delivered on WhatsApp after
                     completion.
                   </p>
                 </div>

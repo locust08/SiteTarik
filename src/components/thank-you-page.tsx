@@ -6,9 +6,9 @@ import {
   CheckCircle2,
   ChevronDown,
   Download,
+  MessageCircle,
   Layers3,
   LoaderCircle,
-  Mail,
   Search,
 } from "lucide-react";
 import { orderCompleteStorageKey, thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
@@ -17,7 +17,8 @@ type ReceiptData = {
   fullName: string;
   businessName: string;
   websiteUrl: string;
-  emailAddress: string;
+  whatsappNumber: string;
+  whatsappConsent?: boolean;
   selectedPackage: string;
   selectedPackageValue: string;
   submissionDetails?: Record<string, string | string[]>;
@@ -28,7 +29,7 @@ const fallbackReceipt: ReceiptData = {
   fullName: "Pending submission",
   businessName: "Pending submission",
   websiteUrl: "Pending submission",
-  emailAddress: "Pending submission",
+  whatsappNumber: "Pending submission",
   selectedPackage: "Core Relaunch",
   selectedPackageValue: "core",
   submittedAt: "",
@@ -37,7 +38,7 @@ const fallbackReceipt: ReceiptData = {
 const nextSteps = [
   { title: "Prep", description: "Queued for build.", icon: Layers3 },
   { title: "SEO", description: "Basic SEO applied.", icon: Search },
-  { title: "Delivery", description: "Sent to your email.", icon: Mail },
+  { title: "Delivery", description: "Sent to your WhatsApp.", icon: MessageCircle },
 ];
 
 const oneHourMs = 60 * 60 * 1000;
@@ -341,7 +342,7 @@ export function ThankYouPage({
             Hold on
           </h1>
           <p className="mt-3 max-w-[18rem] text-sm leading-7 text-white/72">
-            We&apos;re preparing your receipt.
+            We&apos;re preparing your WhatsApp handoff.
           </p>
         </div>
       </main>
@@ -364,7 +365,7 @@ export function ThankYouPage({
             Ngam!
           </h1>
           <p className="mt-3 max-w-[18rem] text-sm leading-7 text-white/72">
-            Confirmation saved.
+            Confirmation saved for WhatsApp delivery.
           </p>
         </div>
       </main>
@@ -398,7 +399,7 @@ export function ThankYouPage({
                 We&apos;re on it.
               </h1>
               <p className="max-w-[28rem] text-base leading-7 text-[var(--muted)] sm:text-lg">
-                Preparing your website handoff for final delivery.{" "}
+                Preparing your website handoff for final delivery on WhatsApp.{" "}
                 <Link
                   href="https://wa.me/60123456789"
                   target="_blank"
@@ -467,7 +468,7 @@ export function ThankYouPage({
               </div>
 
               <div className="mt-2.5 rounded-[1.1rem] border border-[rgba(238,32,40,0.14)] bg-[var(--gold-soft)] px-4 py-3.5 text-sm leading-6 text-[var(--foreground)]">
-                Delivered within <strong>1 hour</strong>. Blog Add-On follows in the same handoff.
+                Delivered within <strong>1 hour</strong> on WhatsApp. Blog Add-On follows in the same handoff.
               </div>
             </div>
           </div>
@@ -495,7 +496,7 @@ export function ThankYouPage({
               <SummaryRow label="Full Name" value={receipt.fullName} />
               <SummaryRow label="Business Name" value={receipt.businessName} />
               <SummaryRow label="Website URL" value={receipt.websiteUrl} />
-              <SummaryRow label="Email" value={receipt.emailAddress} />
+              <SummaryRow label="WhatsApp" value={receipt.whatsappNumber} />
               <SummaryRow label="Package" value={receipt.selectedPackage} />
             </dl>
 
@@ -527,7 +528,7 @@ export function ThankYouPage({
                 <div>
                   <p className="text-sm font-semibold text-[var(--foreground)]">Confirmed</p>
                   <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-                    Final link to your email. Review details, then contact us through WhatsApp
+                    Final link to your WhatsApp. Review details, then contact us through WhatsApp
                     for any fix.
                   </p>
                 </div>
