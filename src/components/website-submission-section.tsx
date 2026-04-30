@@ -27,6 +27,7 @@ type WebsiteSubmissionForm = {
   websiteUrl: string;
   whatsappNumber: string;
   businessType: string;
+  businessTypeOther: string;
   briefBusinessDescription: string;
   mainProductsServices: string;
   industry: string;
@@ -102,6 +103,7 @@ const fieldCharacterLimits: Record<keyof WebsiteSubmissionForm, number> = {
   websiteUrl: 200,
   whatsappNumber: 14,
   businessType: 80,
+  businessTypeOther: 80,
   briefBusinessDescription: 320,
   mainProductsServices: 280,
   industry: 100,
@@ -132,6 +134,7 @@ const initialWebsiteSubmissionForm: WebsiteSubmissionForm = {
   websiteUrl: "",
   whatsappNumber: "+60",
   businessType: "Service",
+  businessTypeOther: "",
   briefBusinessDescription: "",
   mainProductsServices: "",
   industry: "",
@@ -405,6 +408,10 @@ export function WebsiteSubmissionSection({
   const didAttemptLocationDetect = useRef(false);
 
   const isBlogPackage = selectedPackage === "blog";
+  const isOtherBusinessType = websiteForm.businessType === "Others";
+  const resolvedBusinessType = isOtherBusinessType
+    ? websiteForm.businessTypeOther.trim()
+    : websiteForm.businessType;
   const introCopy =
     selectedPackage === "blog"
       ? "SEO Enhancement selected. Pay first, then complete the brief."
@@ -556,6 +563,10 @@ export function WebsiteSubmissionSection({
       setSubmitError("Your last order is complete. Start a new order to continue.");
       return;
     }
+    if (isOtherBusinessType && !websiteForm.businessTypeOther.trim()) {
+      setSubmitError("Please enter your business type.");
+      return;
+    }
     if (!checkoutReady) {
       setSubmitError(checkoutConfigMessage ?? "Checkout is not configured yet.");
       return;
@@ -577,11 +588,15 @@ export function WebsiteSubmissionSection({
       dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_started", {
         ...buildBrowserTrackingMetadata(trackingSnapshot),
         selected_package: selectedPackage,
-        business_type: websiteForm.businessType,
+        business_type: resolvedBusinessType,
       });
     }
 
     const packageDetails = packagePlans.find((plan) => plan.value === selectedPackage);
+    const submissionDetails = {
+      ...websiteForm,
+      businessType: resolvedBusinessType,
+    };
     const receiptData = {
       fullName: websiteForm.fullName,
       businessName: websiteForm.businessName,
@@ -590,7 +605,7 @@ export function WebsiteSubmissionSection({
       whatsappConsent,
       selectedPackage: packageDetails?.title ?? selectedPackage,
       selectedPackageValue: selectedPackage,
-      submissionDetails: websiteForm,
+      submissionDetails,
       paidAt: new Date().toISOString(),
       submittedAt: new Date().toISOString(),
     };
@@ -610,9 +625,9 @@ export function WebsiteSubmissionSection({
           websiteUrl: websiteForm.websiteUrl,
           whatsappNumber: websiteForm.whatsappNumber,
           whatsappConsent,
-          businessType: websiteForm.businessType,
+          businessType: resolvedBusinessType,
           targetLocation: websiteForm.targetLocation,
-          submissionDetails: websiteForm,
+          submissionDetails,
           tracking: trackingSnapshot ?? undefined,
         }),
       });
@@ -785,6 +800,19 @@ export function WebsiteSubmissionSection({
                     required
                   />
                 </label>
+
+                {isOtherBusinessType ? (
+                  <label className="block">
+                    <FieldLabel required>Other Business Type</FieldLabel>
+                    <TextInput
+                      name="businessTypeOther"
+                      placeholder="Enter your business type"
+                      value={websiteForm.businessTypeOther}
+                      onChange={handleWebsiteInputChange}
+                      required
+                    />
+                  </label>
+                ) : null}
 
                 <label className="block">
                   <FieldLabel required>Target Location or Market</FieldLabel>
