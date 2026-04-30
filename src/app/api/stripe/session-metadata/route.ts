@@ -2,7 +2,7 @@ import {
   getStripeEnvironmentSnapshot,
   stripeApiRequest,
 } from "@/lib/stripe-rest";
-import { appendStripeMetadata } from "@/lib/stripe-metadata";
+import { replaceStripeMetadata, stripeManagedMetadataKeys } from "@/lib/stripe-metadata";
 import {
   getRequestDebugContext,
   logServerError,
@@ -14,27 +14,18 @@ type StripeMetadataValue = string | string[] | number | boolean | null | undefin
 type BlogMetadataRequest = {
   sessionId?: string;
   selectedPackage?: string;
-  packageTitle?: string;
   fullName?: string;
   businessName?: string;
   websiteUrl?: string;
   whatsappNumber?: string;
-  whatsappConsent?: boolean | string;
   businessType?: string;
   targetLocation?: string;
   briefBusinessDescription?: string;
   mainProductsServices?: string;
   mainGoal?: string;
   targetKeywords?: string;
-  primaryKeyword?: string;
-  secondaryKeywords?: string;
-  toneOfWriting?: string;
-  audienceShort?: string;
   idealCustomers?: string;
   topicsToCover?: string;
-  blogTopicIdeas?: string;
-  preferredCTA?: string;
-  customCTA?: string;
   ctaText?: string;
   pagesToPush?: string;
   additionalNotes?: string;
@@ -85,10 +76,6 @@ function buildOrderMetadata(
       payload.selectedPackage ?? orderDetails.selectedPackage,
       sessionMetadata.selectedPackage,
     ),
-    packageTitle: getMetadataValue(
-      payload.packageTitle ?? orderDetails.packageTitle,
-      sessionMetadata.packageTitle,
-    ),
     fullName: getMetadataValue(payload.fullName ?? orderDetails.fullName, sessionMetadata.fullName),
     businessName: getMetadataValue(
       payload.businessName ?? orderDetails.businessName,
@@ -98,12 +85,6 @@ function buildOrderMetadata(
     whatsappNumber: getMetadataValue(
       payload.whatsappNumber ?? orderDetails.whatsappNumber,
       sessionMetadata.whatsappNumber,
-    ),
-    whatsappConsent: getMetadataValue(
-      typeof payload.whatsappConsent !== "undefined"
-        ? payload.whatsappConsent
-        : orderDetails.whatsappConsent,
-      sessionMetadata.whatsappConsent,
     ),
     businessType: getMetadataValue(
       payload.businessType ?? orderDetails.businessType,
@@ -125,19 +106,6 @@ function buildBlogMetadata(
   sessionMetadata: Record<string, string | undefined>,
 ) {
   const blogDetails = payload.blogDetails ?? {};
-  const preferredCTA = getMetadataValue(
-    payload.preferredCTA ?? blogDetails.preferredCTA,
-    sessionMetadata.preferredCTA,
-  );
-  const customCTA = getMetadataValue(
-    payload.customCTA ?? blogDetails.customCTA,
-    sessionMetadata.customCTA,
-  );
-  const ctaText = trimMetadataValue(
-    preferredCTA === "Other CTA" && customCTA
-      ? customCTA
-      : getMetadataValue(payload.ctaText ?? blogDetails.ctaText, sessionMetadata.ctaText) || preferredCTA,
-  );
 
   return {
     briefBusinessDescription: trimMetadataValue(
@@ -156,42 +124,15 @@ function buildBlogMetadata(
     targetKeywords: trimMetadataValue(
       getMetadataValue(payload.targetKeywords ?? blogDetails.targetKeywords, sessionMetadata.targetKeywords),
     ),
-    targetLocation: trimMetadataValue(
-      getMetadataValue(payload.targetLocation ?? blogDetails.targetLocation, sessionMetadata.targetLocation),
-    ),
-    primaryKeyword: trimMetadataValue(
-      getMetadataValue(
-        payload.primaryKeyword ?? blogDetails.primaryKeyword ?? payload.targetKeywords ?? blogDetails.targetKeywords,
-        sessionMetadata.primaryKeyword,
-      ),
-    ),
-    secondaryKeywords: trimMetadataValue(
-      getMetadataValue(
-        payload.secondaryKeywords ?? blogDetails.secondaryKeywords,
-        sessionMetadata.secondaryKeywords,
-      ),
-    ),
-    toneOfWriting: trimMetadataValue(
-      getMetadataValue(payload.toneOfWriting ?? blogDetails.toneOfWriting, sessionMetadata.toneOfWriting),
-    ),
-    audienceShort: trimMetadataValue(
-      getMetadataValue(payload.audienceShort ?? blogDetails.audienceShort, sessionMetadata.audienceShort),
-    ),
     idealCustomers: trimMetadataValue(
       getMetadataValue(payload.idealCustomers ?? blogDetails.idealCustomers, sessionMetadata.idealCustomers),
     ),
     topicsToCover: trimMetadataValue(
       getMetadataValue(payload.topicsToCover ?? blogDetails.topicsToCover, sessionMetadata.topicsToCover),
     ),
-    blogTopicIdeas: trimMetadataValue(
-      getMetadataValue(
-        payload.blogTopicIdeas ?? blogDetails.blogTopicIdeas ?? payload.topicsToCover ?? blogDetails.topicsToCover,
-        sessionMetadata.blogTopicIdeas,
-      ),
+    ctaText: trimMetadataValue(
+      getMetadataValue(payload.ctaText ?? blogDetails.ctaText, sessionMetadata.ctaText),
     ),
-    preferredCTA,
-    customCTA,
-    ctaText,
     pagesToPush: trimMetadataValue(
       getMetadataValue(payload.pagesToPush ?? blogDetails.pagesToPush, sessionMetadata.pagesToPush),
     ),
@@ -201,13 +142,16 @@ function buildBlogMetadata(
   };
 }
 
-function hasBlogBriefFields(metadata: ReturnType<typeof buildBlogMetadata>) {
+function hasBlogBriefFields(
+  orderFields: ReturnType<typeof buildOrderMetadata>,
+  metadata: ReturnType<typeof buildBlogMetadata>,
+) {
   return Boolean(
+    orderFields.targetLocation &&
     metadata.briefBusinessDescription &&
       metadata.mainProductsServices &&
       metadata.mainGoal &&
       metadata.targetKeywords &&
-      metadata.targetLocation &&
       metadata.ctaText,
   );
 }
@@ -254,18 +198,21 @@ export async function POST(request: Request) {
       return Response.json({ error: "Please choose a valid package." }, { status: 400 });
     }
 
-  const blogMetadata = buildBlogMetadata(payload, sessionMetadata);
-  const isBlogPackage = selectedPackage === "blog";
+    const blogMetadata = buildBlogMetadata(payload, sessionMetadata);
+    const isBlogPackage = selectedPackage === "blog";
 
-  if (isBlogPackage && !hasBlogBriefFields(blogMetadata)) {
-    return Response.json({ error: "Missing required blog brief metadata." }, { status: 400 });
-  }
+    if (isBlogPackage && !hasBlogBriefFields(orderFields, blogMetadata)) {
+      return Response.json({ error: "Missing required blog brief metadata." }, { status: 400 });
+    }
 
-  const metadataFormData = new URLSearchParams();
-  appendStripeMetadata(metadataFormData, "metadata", orderFields);
-  if (isBlogPackage) {
-    appendStripeMetadata(metadataFormData, "metadata", blogMetadata);
-  }
+    const metadataFormData = new URLSearchParams();
+    replaceStripeMetadata(metadataFormData, "metadata", orderFields, stripeManagedMetadataKeys);
+    if (isBlogPackage) {
+      replaceStripeMetadata(metadataFormData, "metadata", {
+        ...orderFields,
+        ...blogMetadata,
+      }, stripeManagedMetadataKeys);
+    }
 
     await stripeApiRequest(`/checkout/sessions/${encodeURIComponent(sessionId)}`, {
       method: "POST",
@@ -277,16 +224,44 @@ export async function POST(request: Request) {
 
     if (paymentIntentId) {
       const paymentIntentFormData = new URLSearchParams();
-      appendStripeMetadata(paymentIntentFormData, "metadata", orderFields);
-      if (isBlogPackage) {
-        appendStripeMetadata(paymentIntentFormData, "metadata", blogMetadata);
-      }
+      replaceStripeMetadata(
+        paymentIntentFormData,
+        "metadata",
+        isBlogPackage ? { ...orderFields, ...blogMetadata } : orderFields,
+        stripeManagedMetadataKeys,
+      );
 
       try {
         await stripeApiRequest(`/payment_intents/${encodeURIComponent(paymentIntentId)}`, {
           method: "POST",
           body: paymentIntentFormData,
         });
+
+        if (isBlogPackage) {
+          const paymentIntent = await stripeApiRequest<{
+            latest_charge?: { id?: string } | string | null;
+          }>(`/payment_intents/${encodeURIComponent(paymentIntentId)}?expand[]=latest_charge`);
+          const chargeId =
+            paymentIntent.latest_charge && typeof paymentIntent.latest_charge !== "string"
+              ? paymentIntent.latest_charge.id
+              : typeof paymentIntent.latest_charge === "string"
+                ? paymentIntent.latest_charge
+                : undefined;
+
+          if (chargeId) {
+            const chargeFormData = new URLSearchParams();
+            replaceStripeMetadata(
+              chargeFormData,
+              "metadata",
+              { ...orderFields, ...blogMetadata },
+              stripeManagedMetadataKeys,
+            );
+            await stripeApiRequest(`/charges/${encodeURIComponent(chargeId)}`, {
+              method: "POST",
+              body: chargeFormData,
+            });
+          }
+        }
       } catch (error) {
         logServerError("api.stripe.session-metadata", "payment intent metadata propagation failed", error, {
           sessionId,
@@ -301,10 +276,12 @@ export async function POST(request: Request) {
 
     if (subscriptionId) {
       const subscriptionFormData = new URLSearchParams();
-      appendStripeMetadata(subscriptionFormData, "metadata", orderFields);
-      if (isBlogPackage) {
-        appendStripeMetadata(subscriptionFormData, "metadata", blogMetadata);
-      }
+      replaceStripeMetadata(
+        subscriptionFormData,
+        "metadata",
+        isBlogPackage ? { ...orderFields, ...blogMetadata } : orderFields,
+        stripeManagedMetadataKeys,
+      );
 
       try {
         await stripeApiRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}`, {

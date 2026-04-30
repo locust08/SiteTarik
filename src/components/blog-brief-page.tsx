@@ -482,18 +482,22 @@ async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBrief
     : form.preferredCTA;
   const orderDetails = {
     selectedPackage: receipt.selectedPackageValue,
-    packageTitle: receipt.selectedPackage,
     fullName: receipt.fullName,
     businessName: receipt.businessName,
     websiteUrl: receipt.websiteUrl,
     whatsappNumber: receipt.whatsappNumber,
-    whatsappConsent: String(receipt.whatsappConsent ?? false),
+    targetLocation: form.targetLocation,
   };
   const blogDetails = {
-    ...form,
-    preferredCTA: form.preferredCTA,
-    customCTA: form.customCTA,
+    briefBusinessDescription: form.briefBusinessDescription,
+    mainProductsServices: form.mainProductsServices,
+    mainGoal: form.mainGoal,
+    targetKeywords: form.targetKeywords,
+    idealCustomers: form.idealCustomers,
+    topicsToCover: form.topicsToCover,
     ctaText: effectiveCTA,
+    pagesToPush: form.pagesToPush,
+    additionalNotes: form.additionalNotes,
   };
 
   const response = await fetch("/api/stripe/session-metadata", {
@@ -504,21 +508,17 @@ async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBrief
     body: JSON.stringify({
       sessionId,
       selectedPackage: "blog",
-      packageTitle: receipt.selectedPackage,
       fullName: receipt.fullName,
       businessName: receipt.businessName,
       websiteUrl: receipt.websiteUrl,
       whatsappNumber: receipt.whatsappNumber,
-      whatsappConsent: receipt.whatsappConsent,
+      targetLocation: form.targetLocation,
       briefBusinessDescription: form.briefBusinessDescription,
       mainProductsServices: form.mainProductsServices,
       targetKeywords: form.targetKeywords,
-      targetLocation: form.targetLocation,
       mainGoal: form.mainGoal,
       idealCustomers: form.idealCustomers,
       topicsToCover: form.topicsToCover,
-      preferredCTA: form.preferredCTA,
-      customCTA: form.customCTA,
       ctaText: effectiveCTA,
       pagesToPush: form.pagesToPush,
       additionalNotes: form.additionalNotes,

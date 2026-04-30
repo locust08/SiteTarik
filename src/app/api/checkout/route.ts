@@ -11,11 +11,6 @@ import {
   logServerEvent,
 } from "@/lib/server-debug";
 import { getRequiredSiteUrl } from "@/lib/env";
-import {
-  parseTrackingSnapshot,
-  snapshotToTrackingMetadata,
-} from "@/lib/tracking/core";
-import { buildRequestTrackingMetadata } from "@/lib/tracking/request";
 
 type PackagePlan = "core" | "blog";
 
@@ -190,13 +185,6 @@ export async function POST(request: Request) {
     const baseUrl = getRequiredSiteUrl();
     const successPath = selectedPackage === "blog" ? "/blog-brief" : "/thank-you";
     const receiptCode = createReceiptCode(selectedPackage);
-    const bodyTrackingMetadata = payload.tracking
-      ? parseTrackingSnapshot(JSON.stringify(payload.tracking))
-      : null;
-    const trackingMetadata = buildRequestTrackingMetadata(request);
-    const mergedTrackingMetadata = bodyTrackingMetadata
-      ? snapshotToTrackingMetadata(bodyTrackingMetadata)
-      : trackingMetadata;
     const formData = new URLSearchParams();
     formData.set("mode", packageDetails.mode);
     formData.set("allow_promotion_codes", "true");
@@ -204,20 +192,20 @@ export async function POST(request: Request) {
     formData.set("cancel_url", `${baseUrl}/#contact`);
     const orderMetadata = {
       selectedPackage,
-      packageTitle: packageDetails.title,
       fullName: resolvedFullName,
       businessName: resolvedBusinessName,
       websiteUrl: resolvedWebsiteUrl,
       whatsappNumber: resolvedWhatsAppNumber,
-      whatsappConsent,
       businessType: resolvedBusinessType,
       targetLocation: resolvedTargetLocation,
       receiptCode,
     };
 
     appendStripeMetadata(formData, "metadata", orderMetadata);
-    if (mergedTrackingMetadata) {
-      appendStripeMetadata(formData, "metadata", mergedTrackingMetadata);
+    if (packageDetails.mode === "payment") {
+      appendStripeMetadata(formData, "payment_intent_data[metadata]", orderMetadata);
+    } else {
+      appendStripeMetadata(formData, "subscription_data[metadata]", orderMetadata);
     }
     formData.set("line_items[0][quantity]", "1");
     formData.set("line_items[0][price_data][currency]", "myr");

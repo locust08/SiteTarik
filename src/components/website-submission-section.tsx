@@ -62,7 +62,7 @@ const packagePlans: Array<{
 }> = [
   {
     value: "core",
-    title: "Core Relaunch",
+    title: "Core Reborn",
     price: "RM100 / year",
     summary: "Best for existing websites that need a lean refresh with basic SEO, hosting, and WhatsApp delivery.",
     highlights: [
@@ -396,6 +396,8 @@ export function WebsiteSubmissionSection({
   const [whatsappConsent, setWhatsappConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [checkoutReady, setCheckoutReady] = useState(true);
+  const [checkoutConfigMessage, setCheckoutConfigMessage] = useState<string | null>(null);
   const [locationDetectionState, setLocationDetectionState] = useState<
     "idle" | "detecting" | "detected" | "manual"
   >("idle");
@@ -406,7 +408,7 @@ export function WebsiteSubmissionSection({
   const introCopy =
     selectedPackage === "blog"
       ? "SEO Enhancement selected. Pay first, then complete the brief."
-      : "Core Relaunch selected. Share the essentials and we’ll handle the rest.";
+      : "Core Reborn selected. Share the essentials and we’ll handle the rest.";
 
   useEffect(() => {
     try {
@@ -493,6 +495,45 @@ export function WebsiteSubmissionSection({
     );
   }, [websiteForm.targetLocation]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadCheckoutConfig() {
+      try {
+        const response = await fetch("/api/checkout-config", { cache: "no-store" });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          ready?: boolean;
+          message?: string;
+        };
+
+        if (!isActive) {
+          return;
+        }
+
+        setCheckoutReady(payload.ready !== false);
+        setCheckoutConfigMessage(payload.ready === false ? payload.message ?? "Checkout is not configured yet." : null);
+      } catch {
+        if (!isActive) {
+          return;
+        }
+
+        setCheckoutReady(true);
+        setCheckoutConfigMessage(null);
+      }
+    }
+
+    void loadCheckoutConfig();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const handleWebsiteInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
@@ -513,6 +554,10 @@ export function WebsiteSubmissionSection({
     event.preventDefault();
     if (completionState) {
       setSubmitError("Your last order is complete. Start a new order to continue.");
+      return;
+    }
+    if (!checkoutReady) {
+      setSubmitError(checkoutConfigMessage ?? "Checkout is not configured yet.");
       return;
     }
     if (!whatsappConsent) {
@@ -598,7 +643,17 @@ export function WebsiteSubmissionSection({
 
       window.location.assign(payload.url);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Checkout failed.");
+      const message = error instanceof Error ? error.message : "Checkout failed.";
+
+      if (message.includes("Missing STRIPE_SECRET_KEY")) {
+        setSubmitError("Checkout is not configured yet. Add STRIPE_SECRET_KEY to .env.local or your deployment environment to enable payment.");
+      } else if (message.includes("STRIPE_SECRET_KEY must start with")) {
+        setSubmitError("Checkout is not configured yet. STRIPE_SECRET_KEY must start with sk_test_ or sk_live_.");
+      } else if (message.includes("Missing NEXT_PUBLIC_SITE_URL")) {
+        setSubmitError("Checkout is not configured yet. Add NEXT_PUBLIC_SITE_URL to your environment and restart the app.");
+      } else {
+        setSubmitError(message);
+      }
       setIsSubmitting(false);
     }
   };
@@ -643,9 +698,9 @@ export function WebsiteSubmissionSection({
             Submit Your Website
           </h2>
           <p className="mx-auto mt-6 max-w-[44rem] text-base leading-8 text-[var(--muted)] sm:text-lg">
-            Share your website details and choose your package. We will prepare
-            the hosted version with <span className="text-[#ee2028]">basic SEO</span> and send the
-            <span className="text-[#ee2028]"> final website link on WhatsApp</span>.
+            Share your website details and package. We&apos;ll deliver a hosted version with
+            <span className="text-[#ee2028]"> basic SEO</span> and the
+            <span className="text-[#ee2028]"> final link on WhatsApp</span>.
           </p>
         </div>
 
@@ -762,6 +817,11 @@ export function WebsiteSubmissionSection({
               <legend className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
                 Select Package
               </legend>
+              {!whatsappConsent ? (
+                <p className="text-sm leading-6 text-[var(--muted)]">
+                  Tick the WhatsApp consent above to unlock package selection and payment.
+                </p>
+              ) : null}
 
               <div className="grid gap-3 md:grid-cols-2">
                 {packagePlans.map((plan) => {
@@ -771,12 +831,15 @@ export function WebsiteSubmissionSection({
                     <button
                       key={plan.value}
                       type="button"
+                      disabled={!whatsappConsent}
                       onClick={() => onPackageChange(plan.value)}
                       aria-pressed={isSelected}
                       className={`rounded-[1rem] border p-4 text-left transition duration-200 ${
-                        isSelected
-                          ? "border-[rgba(238,32,40,0.28)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,248,249,0.96))] shadow-[0_8px_18px_rgba(238,32,40,0.05)]"
-                          : "border-[var(--border)] bg-[var(--surface-strong)] hover:border-[rgba(238,32,40,0.14)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.035)]"
+                        !whatsappConsent
+                          ? "cursor-not-allowed border-[var(--border)] bg-[rgba(247,247,247,0.9)] opacity-55 shadow-none"
+                          : isSelected
+                            ? "border-[rgba(238,32,40,0.28)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,248,249,0.96))] shadow-[0_8px_18px_rgba(238,32,40,0.05)]"
+                            : "border-[var(--border)] bg-[var(--surface-strong)] hover:border-[rgba(238,32,40,0.14)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.035)]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -956,6 +1019,10 @@ export function WebsiteSubmissionSection({
                 <p className="rounded-[1rem] border border-[rgba(238,32,40,0.16)] bg-[var(--gold-soft)] px-4 py-3 text-sm leading-6 text-[var(--foreground)]">
                   {submitError}
                 </p>
+              ) : !checkoutReady && checkoutConfigMessage ? (
+                <p className="rounded-[1rem] border border-[rgba(238,32,40,0.16)] bg-[var(--gold-soft)] px-4 py-3 text-sm leading-6 text-[var(--foreground)]">
+                  {checkoutConfigMessage}
+                </p>
               ) : null}
               <div className="mt-4 flex flex-col gap-4 border-t border-[var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="max-w-[34rem]">
@@ -981,8 +1048,12 @@ export function WebsiteSubmissionSection({
                 ) : (
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23] hover:shadow-[0_18px_35px_rgba(0,0,0,0.16)]"
+                    disabled={isSubmitting || !checkoutReady || !whatsappConsent}
+                    className={`group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 ${
+                      isSubmitting || !checkoutReady || !whatsappConsent
+                        ? "cursor-not-allowed bg-[#f3a4a8] shadow-none"
+                        : "bg-[var(--gold)] hover:-translate-y-0.5 hover:bg-[#d81c23] hover:shadow-[0_18px_35px_rgba(0,0,0,0.16)]"
+                    }`}
                     aria-live="polite"
                   >
                     {isSubmitting ? (
@@ -990,6 +1061,8 @@ export function WebsiteSubmissionSection({
                         Redirecting
                         <LoaderCircle className="h-4 w-4 animate-spin" />
                       </>
+                    ) : !checkoutReady ? (
+                      <>Checkout unavailable</>
                     ) : (
                       <>
                         Continue to payment

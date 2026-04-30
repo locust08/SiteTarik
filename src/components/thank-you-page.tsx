@@ -30,7 +30,7 @@ const fallbackReceipt: ReceiptData = {
   businessName: "Pending submission",
   websiteUrl: "Pending submission",
   whatsappNumber: "Pending submission",
-  selectedPackage: "Core Relaunch",
+  selectedPackage: "Core Reborn",
   selectedPackageValue: "core",
   submittedAt: "",
 };
