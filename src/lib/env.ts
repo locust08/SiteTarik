@@ -67,15 +67,29 @@ export function getRequiredStripeSecretKey() {
   return secretKey;
 }
 
+export function getRequiredStripeWebhookSecret() {
+  const webhookSecret = readOptionalEnvValue("STRIPE_WEBHOOK_SECRET");
+
+  if (!webhookSecret) {
+    throw new Error("Missing STRIPE_WEBHOOK_SECRET. Configure the Stripe webhook signing secret before receiving webhooks.");
+  }
+
+  return webhookSecret;
+}
+
 export function getStripeEnvironmentSnapshot() {
   const secretKey = readOptionalEnvValue("STRIPE_SECRET_KEY");
   const siteUrl = readOptionalEnvValue("NEXT_PUBLIC_SITE_URL");
   const siteUrlMode = getSiteUrlMode(siteUrl);
+  const resendApiKey = readOptionalEnvValue("RESEND_API_KEY");
+  const stripeWebhookSecret = readOptionalEnvValue("STRIPE_WEBHOOK_SECRET");
 
   return {
     hasStripeSecretKey: Boolean(secretKey),
     stripeKeyMode: getStripeKeyMode(secretKey),
     hasSiteUrl: Boolean(siteUrl),
     siteUrlMode,
+    hasResendApiKey: Boolean(resendApiKey),
+    hasStripeWebhookSecret: Boolean(stripeWebhookSecret),
   };
 }

@@ -4,11 +4,18 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:doppler": "doppler run -- npm run dev",
     "build": "next build --webpack",
     "preview": "opennextjs-cloudflare build && node scripts\\fix-opennext-durable-objects.mjs && opennextjs-cloudflare preview",
+    "preview:doppler": "doppler run -- npm run preview",
     "deploy": "opennextjs-cloudflare build && node scripts\\fix-opennext-durable-objects.mjs && opennextjs-cloudflare deploy",
+    "deploy:doppler": "doppler run -- npm run deploy",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "stripe:export-clean": "node scripts\\export-stripe-clean-transactions.mjs",
+    "stripe:clean-csv": "node scripts\\clean-stripe-export-csv.mjs",
+    "stripe:detect-alerts": "node scripts\\detect-stripe-alerts.mjs",
+    "stripe:ack-alerts": "node scripts\\ack-stripe-alerts.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.8.0",

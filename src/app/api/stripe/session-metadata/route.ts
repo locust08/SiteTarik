@@ -1,8 +1,12 @@
 import {
+  sendImmediateBlogBriefAlert,
+} from "@/lib/delivery-alerts";
+import {
   getStripeEnvironmentSnapshot,
   stripeApiRequest,
 } from "@/lib/stripe-rest";
 import { replaceStripeMetadata, stripeManagedMetadataKeys } from "@/lib/stripe-metadata";
+import { hasCompletedBlogBrief } from "@/lib/stripe-alerts";
 import {
   getRequestDebugContext,
   logServerError,
@@ -183,11 +187,20 @@ export async function POST(request: Request) {
 
   try {
     const session = await stripeApiRequest<{
+      id?: string;
+      created?: number;
+      amount_total?: number | null;
+      currency?: string | null;
       mode?: string;
       payment_intent?: string | { id?: string };
       subscription?: string | { id?: string };
       status?: string;
       payment_status?: string;
+      customer_email?: string | null;
+      customer_details?: {
+        email?: string | null;
+        name?: string | null;
+      } | null;
       metadata?: Record<string, string | undefined>;
     }>(`/checkout/sessions/${encodeURIComponent(sessionId)}`);
 
@@ -198,6 +211,7 @@ export async function POST(request: Request) {
     const sessionMetadata = session.metadata ?? {};
     const orderFields = buildOrderMetadata(payload, sessionMetadata);
     const selectedPackage = orderFields.selectedPackage;
+    const alreadyHadCompletedBlogBrief = hasCompletedBlogBrief(sessionMetadata);
 
     if (selectedPackage !== "core" && selectedPackage !== "blog") {
       return Response.json({ error: "Please choose a valid package." }, { status: 400 });
@@ -306,6 +320,21 @@ export async function POST(request: Request) {
       hasSubscription: Boolean(subscriptionId),
       hasBlogBriefFields: isBlogPackage,
     });
+
+    if (isBlogPackage && !alreadyHadCompletedBlogBrief) {
+      try {
+        await sendImmediateBlogBriefAlert(session, {
+          idempotencyKey: `blog-brief:${sessionId}`,
+          metadata: metadataToSave,
+        });
+      } catch (error) {
+        logServerError("api.stripe.session-metadata", "blog brief alert failed", error, {
+          sessionId,
+          selectedPackage,
+          ...getStripeEnvironmentSnapshot(),
+        });
+      }
+    }
 
     return Response.json({ ok: true });
   } catch (error) {
