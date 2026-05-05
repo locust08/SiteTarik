@@ -1,55 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SiteTarik
 
-## Tracking Setup
+SiteTarik is a Next.js app deployed on Cloudflare Workers through OpenNext. The current checkout flow creates Stripe Checkout sessions on the server and keeps the saved order/brief record in Stripe metadata.
 
-SiteTarik now supports GTM, GA4, and attribution persistence for the checkout flow.
+## Environment Variables
 
-Public env vars:
+Public variables (`NEXT_PUBLIC_*`):
 
-- `NEXT_PUBLIC_SITE_URL`
-- `NEXT_PUBLIC_GTM_ID`
-- `NEXT_PUBLIC_GA4_MEASUREMENT_ID`
+- `NEXT_PUBLIC_SITE_URL` - required canonical origin for checkout success and cancel URLs. Use `http://localhost:3000` locally and your production domain in Cloudflare.
+- `NEXT_PUBLIC_GTM_ID` - optional GTM container ID.
+- `NEXT_PUBLIC_GA4_MEASUREMENT_ID` - optional GA4 measurement ID.
 
-Required deployment notes:
+Server-only variables:
 
-- The visible GTM container name must be exactly `SiteTarik`.
-- Preserve the current Cloudflare Workers + OpenNext deployment model.
-- Attribution is captured in `sessionStorage`, a first-party cookie, and Stripe checkout metadata.
-- `page_view` and checkout-start events are prepared automatically, but payment success events are not force-fired on page load.
+- `STRIPE_SECRET_KEY` - required Stripe secret key. This must stay server-only.
 
-If you are setting this up manually, create or update the GTM container first, then wire the resulting GTM ID and GA4 measurement ID into the public env vars above.
+Not required in the current codebase:
 
-## Getting Started
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
-First, run the development server:
+## Local Development
+
+1. Copy `.env.example` to `.env.local`.
+2. Set `NEXT_PUBLIC_SITE_URL` and `STRIPE_SECRET_KEY`.
+3. Add `NEXT_PUBLIC_GTM_ID` and `NEXT_PUBLIC_GA4_MEASUREMENT_ID` only if you want analytics enabled locally.
+4. Run:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The checkout readiness check will stay disabled until `NEXT_PUBLIC_SITE_URL` is a valid `http://` or `https://` URL and `STRIPE_SECRET_KEY` starts with `sk_test_` or `sk_live_`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Cloudflare Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Keep the existing OpenNext + Cloudflare Workers deployment model.
 
-## Learn More
+- Set `NEXT_PUBLIC_SITE_URL` in the Cloudflare Worker environment to the canonical production origin.
+- Set `NEXT_PUBLIC_GTM_ID` and `NEXT_PUBLIC_GA4_MEASUREMENT_ID` as plain text Worker variables only if analytics should run in that environment.
+- Set `STRIPE_SECRET_KEY` as a Wrangler/Cloudflare secret, not in `wrangler.jsonc`:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx wrangler secret put STRIPE_SECRET_KEY
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- If you use `npm run preview` before deploy, make the same values available to the Wrangler environment used for local Worker preview.
+- Deploy with:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run deploy
+```
 
-## Deploy on Vercel
+## Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Stripe metadata remains the lightweight saved record for checkout and brief data in this repo.
+- GTM/GA4 wiring is optional and stays disabled when the corresponding public env vars are empty.

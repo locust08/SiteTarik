@@ -7,7 +7,6 @@ import {
   snapshotToTrackingMetadata,
 } from "@/lib/tracking/core";
 import type { SiteTarikTrackingSnapshot } from "@/lib/tracking/types";
-import { getSiteTarikAnalyticsConfig } from "@/lib/site-tarik-analytics";
 import {
   siteTarikTrackingCookieMaxAgeSeconds,
   siteTarikTrackingCookieName,
@@ -16,7 +15,6 @@ import {
 
 type BrowserTrackingWindow = Window & {
   dataLayer?: Array<Record<string, unknown>>;
-  gtag?: (...args: unknown[]) => void;
 };
 
 function getBrowserWindow() {
@@ -123,47 +121,14 @@ function dispatchDataLayerEvent(eventName: string, payload: Record<string, unkno
   });
 }
 
-function dispatchGtagEvent(eventName: string, payload: Record<string, unknown>) {
-  const browserWindow = getBrowserWindow();
-
-  if (typeof browserWindow.gtag !== "function") {
-    return;
-  }
-
-  browserWindow.gtag("event", eventName, payload);
-}
-
-function getDirectGa4EventName(eventName: string) {
-  if (eventName === "site_tarik_page_view") {
-    return "page_view";
-  }
-
-  if (eventName === "site_tarik_checkout_started") {
-    return "begin_checkout";
-  }
-
-  return eventName;
-}
-
 export function dispatchSiteTarikAnalyticsEvent(eventName: string, payload: Record<string, unknown>) {
   if (typeof window === "undefined") {
     return;
   }
 
-  const analyticsConfig = getSiteTarikAnalyticsConfig();
   const analyticsPayload: Record<string, unknown> = { ...payload };
 
   delete analyticsPayload.event;
-
-  if (analyticsConfig.gtmId) {
-    dispatchDataLayerEvent(eventName, analyticsPayload);
-    return;
-  }
-
-  if (analyticsConfig.ga4MeasurementId) {
-    dispatchGtagEvent(getDirectGa4EventName(eventName), analyticsPayload);
-    return;
-  }
 
   dispatchDataLayerEvent(eventName, analyticsPayload);
 }

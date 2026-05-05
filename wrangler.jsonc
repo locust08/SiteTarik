@@ -1,11 +1,19 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sitetarik",
+  // Keep NEXT_PUBLIC_* values in your Cloudflare Worker environment.
+  // Add STRIPE_SECRET_KEY with `wrangler secret put STRIPE_SECRET_KEY` instead of committing it here.
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-17",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "www.sitetarik.com",
+      "custom_domain": true
+    }
+  ]
 }

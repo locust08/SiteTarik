@@ -30,6 +30,12 @@ import {
 import { CivitasFooter } from "@/components/civitas-footer";
 import { CtaLink } from "@/components/cta-link";
 import { WebsiteSubmissionSection } from "@/components/website-submission-section";
+import { getSiteTarikPackageTitle } from "@/lib/order-flow";
+import {
+  buildBrowserTrackingMetadata,
+  dispatchSiteTarikAnalyticsEvent,
+  readTrackingSnapshotFromBrowser,
+} from "@/lib/tracking/browser";
 
 type NavItem = {
   label: string;
@@ -223,8 +229,8 @@ const faqItems: FaqItem[] = [
     answer: <>RM100/year includes Basic SEO, hosting, and final website link sent through WhatsApp.</>,
   },
   {
-    question: "What is included in the blog add-on?",
-    answer: <>The RM120 add-on includes 12 SEO-friendly blog pages, and the brief is completed after payment.</>,
+    question: "What is included in SEO Enhancement?",
+    answer: <>SEO Enhancement is RM220 total and includes 12 SEO-friendly blog pages, with the brief completed after payment.</>,
   },
   {
     question: "Will SEO be included?",
@@ -359,13 +365,11 @@ export function CivitasPage() {
   const [selectedPackage, setSelectedPackage] = useState<"core" | "blog">("core");
   const [processProgress, setProcessProgress] = useState(0);
   const isBlogPackage = selectedPackage === "blog";
-  const selectedPackageLabel = isBlogPackage ? "Blog Add-On" : "Core plan";
-  const selectedPackageTitle = isBlogPackage
-    ? "Website Reborn + Blog Add-On"
-    : "Website Reborn";
+  const selectedPackageLabel = getSiteTarikPackageTitle(selectedPackage);
+  const selectedPackageTitle = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageDescription = isBlogPackage
-    ? "Content generation for existing sites with stronger structure, weekly releases, basic SEO, hosting, and WhatsApp delivery."
-    : "A clean reborn website with basic SEO, hosting, and WhatsApp delivery.";
+    ? "SEO Enhancement includes the Core Reborn handoff plus 12 weekly blog releases for stronger visibility."
+    : "Core Reborn gives you a clean website refresh with basic SEO, hosting, and WhatsApp delivery.";
   const selectedPackageIncludes = isBlogPackage
     ? pricingBlogIncludes
     : pricingCoreIncludes;
@@ -503,6 +507,22 @@ export function CivitasPage() {
       window.removeEventListener("resize", handleScroll);
     };
   }, []);
+
+  const handlePackageChange = (packagePlan: "core" | "blog") => {
+    setSelectedPackage(packagePlan);
+
+    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
+    if (!trackingSnapshot) {
+      return;
+    }
+
+    dispatchSiteTarikAnalyticsEvent("site_tarik_package_selected", {
+      ...buildBrowserTrackingMetadata(trackingSnapshot),
+      selected_package: packagePlan,
+      package_title: getSiteTarikPackageTitle(packagePlan),
+    });
+  };
 
   return (
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--foreground)]">
@@ -1031,11 +1051,7 @@ export function CivitasPage() {
                 <div className="flex flex-col gap-6 border-b border-[var(--border)] px-6 py-6 sm:px-8 lg:flex-row lg:items-start lg:justify-between">
                   <button
                     type="button"
-                    onClick={() =>
-                      setSelectedPackage((current) =>
-                        current === "core" ? "blog" : "core",
-                      )
-                    }
+                    onClick={() => handlePackageChange(isBlogPackage ? "core" : "blog")}
                     className="max-w-[34rem] text-left"
                   >
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
@@ -1077,7 +1093,7 @@ export function CivitasPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
-                          Blog Add-On
+                          SEO Enhancement
                           </p>
                           <p className="mt-2 text-base font-medium text-[var(--foreground)]">
                           + RM120
@@ -1088,9 +1104,7 @@ export function CivitasPage() {
                           type="button"
                           role="switch"
                           aria-checked={isBlogPackage}
-                          onClick={() =>
-                            setSelectedPackage(isBlogPackage ? "core" : "blog")
-                          }
+                          onClick={() => handlePackageChange(isBlogPackage ? "core" : "blog")}
                           className={`relative inline-flex h-9 w-16 items-center rounded-full border transition ${
                             isBlogPackage
                               ? "border-[#ee2028] bg-[#ee2028] shadow-[0_0_0_3px_rgba(238,32,40,0.12)]"
@@ -1127,7 +1141,7 @@ export function CivitasPage() {
                       <div className="overflow-hidden">
                         <div className="rounded-[1.3rem] bg-white p-4 shadow-[0_4px_14px_rgba(0,0,0,0.025)]">
                           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--foreground)]/64">
-                            Blog package includes
+                            SEO Enhancement includes
                           </p>
                           <ul className="mt-3 space-y-3">
                             {pricingBlogIncludes.map((item) => (
@@ -1256,7 +1270,7 @@ export function CivitasPage() {
 
             <WebsiteSubmissionSection
               selectedPackage={selectedPackage}
-              onPackageChange={setSelectedPackage}
+              onPackageChange={handlePackageChange}
             />
 
         <section id="faq" className="bg-[var(--surface-strong)] px-6 py-18 sm:px-8 lg:px-10 lg:py-22">

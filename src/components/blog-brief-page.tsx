@@ -9,6 +9,11 @@ import {
   thankYouStorageKey,
   thankYouStripeSessionKey,
 } from "@/lib/order-flow";
+import {
+  buildBrowserTrackingMetadata,
+  dispatchSiteTarikAnalyticsEvent,
+  readTrackingSnapshotFromBrowser,
+} from "@/lib/tracking/browser";
 
 type BlogBriefForm = {
   briefBusinessDescription: string;
@@ -35,6 +40,36 @@ type ReceiptData = {
   submissionDetails?: Record<string, string | string[]>;
   paidAt?: string;
   submittedAt: string;
+  receiptCode?: string;
+};
+
+type StripeVerifyPayload = {
+  isPaid?: boolean;
+  selectedPackage?: string;
+  paidAtIso?: string | null;
+  receiptCode?: string | null;
+  hasBlogBrief?: boolean;
+  order?: {
+    packageTitle?: string;
+    fullName?: string;
+    businessName?: string;
+    websiteUrl?: string;
+    whatsappNumber?: string;
+    targetLocation?: string;
+    receiptCode?: string;
+  };
+  blog?: {
+    briefBusinessDescription?: string;
+    mainProductsServices?: string;
+    targetKeywords?: string;
+    targetLocation?: string;
+    mainGoal?: string;
+    idealCustomers?: string;
+    topicsToCover?: string;
+    ctaText?: string;
+    pagesToPush?: string;
+    additionalNotes?: string;
+  };
 };
 
 type BlogBriefLockRecord = {
@@ -476,6 +511,118 @@ function getBlogBriefSessionId() {
   return sessionId;
 }
 
+function getStoredFieldValue(
+  fields: Record<string, string | string[]> | undefined,
+  key: string,
+) {
+  const rawValue = fields?.[key];
+
+  if (Array.isArray(rawValue)) {
+    return rawValue[0] ?? "";
+  }
+
+  return rawValue ?? "";
+}
+
+function getVerificationCtaState(ctaText: string | undefined) {
+  const normalizedCtaText = ctaText?.trim() ?? "";
+
+  if (!normalizedCtaText) {
+    return {
+      preferredCTA: initialBlogBriefForm.preferredCTA,
+      customCTA: "",
+    };
+  }
+
+  if (ctaOptions.includes(normalizedCtaText)) {
+    return {
+      preferredCTA: normalizedCtaText,
+      customCTA: "",
+    };
+  }
+
+  return {
+    preferredCTA: "Other CTA",
+    customCTA: normalizedCtaText,
+  };
+}
+
+function buildReceiptFromVerification(
+  payload: StripeVerifyPayload,
+  storedReceipt: Partial<ReceiptData> | null,
+) {
+  const order = payload.order ?? {};
+  const blog = payload.blog ?? {};
+  const storedSubmissionDetails = storedReceipt?.submissionDetails;
+  const ctaState = getVerificationCtaState(blog.ctaText);
+  const submissionDetails = {
+    ...(storedSubmissionDetails ?? {}),
+    targetLocation:
+      blog.targetLocation ||
+      order.targetLocation ||
+      getStoredFieldValue(storedSubmissionDetails, "targetLocation"),
+    briefBusinessDescription:
+      blog.briefBusinessDescription ||
+      getStoredFieldValue(storedSubmissionDetails, "briefBusinessDescription"),
+    mainProductsServices:
+      blog.mainProductsServices ||
+      getStoredFieldValue(storedSubmissionDetails, "mainProductsServices"),
+    targetKeywords:
+      blog.targetKeywords || getStoredFieldValue(storedSubmissionDetails, "targetKeywords"),
+    mainGoal: blog.mainGoal || getStoredFieldValue(storedSubmissionDetails, "mainGoal"),
+    idealCustomers:
+      blog.idealCustomers || getStoredFieldValue(storedSubmissionDetails, "idealCustomers"),
+    topicsToCover:
+      blog.topicsToCover || getStoredFieldValue(storedSubmissionDetails, "topicsToCover"),
+    preferredCTA: ctaState.preferredCTA,
+    customCTA: ctaState.customCTA,
+    pagesToPush: blog.pagesToPush || getStoredFieldValue(storedSubmissionDetails, "pagesToPush"),
+    additionalNotes:
+      blog.additionalNotes || getStoredFieldValue(storedSubmissionDetails, "additionalNotes"),
+  };
+
+  return {
+    fullName: order.fullName || storedReceipt?.fullName || "",
+    businessName: order.businessName || storedReceipt?.businessName || "",
+    websiteUrl: order.websiteUrl || storedReceipt?.websiteUrl || "",
+    whatsappNumber: order.whatsappNumber || storedReceipt?.whatsappNumber || "",
+    whatsappConsent: storedReceipt?.whatsappConsent ?? false,
+    selectedPackage: order.packageTitle || storedReceipt?.selectedPackage || "SEO Enhancement",
+    selectedPackageValue: "blog",
+    submissionDetails,
+    paidAt: payload.paidAtIso ?? storedReceipt?.paidAt ?? storedReceipt?.submittedAt ?? "",
+    submittedAt: storedReceipt?.submittedAt ?? payload.paidAtIso ?? new Date().toISOString(),
+    receiptCode: payload.receiptCode ?? order.receiptCode ?? storedReceipt?.receiptCode ?? "",
+  } satisfies ReceiptData;
+}
+
+function buildFormFromReceipt(receipt: ReceiptData) {
+  const submissionDetails = receipt.submissionDetails;
+  const ctaState = getVerificationCtaState(getStoredFieldValue(submissionDetails, "preferredCTA"));
+  const resolvedPreferredCta =
+    getStoredFieldValue(submissionDetails, "preferredCTA") === "Other CTA"
+      ? "Other CTA"
+      : ctaState.preferredCTA;
+  const resolvedCustomCta =
+    getStoredFieldValue(submissionDetails, "preferredCTA") === "Other CTA"
+      ? getStoredFieldValue(submissionDetails, "customCTA")
+      : ctaState.customCTA;
+
+  return {
+    briefBusinessDescription: getStoredFieldValue(submissionDetails, "briefBusinessDescription"),
+    mainProductsServices: getStoredFieldValue(submissionDetails, "mainProductsServices"),
+    targetKeywords: getStoredFieldValue(submissionDetails, "targetKeywords"),
+    targetLocation: getStoredFieldValue(submissionDetails, "targetLocation"),
+    mainGoal: getStoredFieldValue(submissionDetails, "mainGoal") || initialBlogBriefForm.mainGoal,
+    idealCustomers: getStoredFieldValue(submissionDetails, "idealCustomers"),
+    topicsToCover: getStoredFieldValue(submissionDetails, "topicsToCover"),
+    preferredCTA: resolvedPreferredCta,
+    customCTA: resolvedCustomCta,
+    pagesToPush: getStoredFieldValue(submissionDetails, "pagesToPush"),
+    additionalNotes: getStoredFieldValue(submissionDetails, "additionalNotes"),
+  } satisfies BlogBriefForm;
+}
+
 async function syncBlogBriefStripeMetadata(receipt: ReceiptData, form: BlogBriefForm, sessionId: string) {
   const effectiveCTA = form.preferredCTA === "Other CTA" && form.customCTA.trim()
     ? form.customCTA.trim()
@@ -545,7 +692,6 @@ export function BlogBriefPage() {
 
   useEffect(() => {
     let cancelled = false;
-    let lockTimeoutId: number | undefined;
     let confirmTimeoutId: number | undefined;
     const startedAt = Date.now();
 
@@ -567,93 +713,72 @@ export function BlogBriefPage() {
       }
     };
 
-    try {
-      const sessionId = getBlogBriefSessionId();
+    const verifyPaymentAccess = async (sessionId: string) => {
       const existingLock = readBlogBriefLock(sessionId);
 
       if (existingLock) {
-        lockTimeoutId = window.setTimeout(() => {
-          if (cancelled) {
-            return;
-          }
-
-          setLockedSessionId(sessionId);
-          setAccessState("locking");
-          void (async () => {
-            await waitForLockedLoadingTime();
-
-            if (!cancelled) {
-              setAccessState("locked");
-            }
-          })();
-        }, 0);
-        return;
-      }
-    } catch {
-      // Ignore malformed URLs and keep the brief flow usable.
-    }
-
-    const verifyPaymentAccess = async () => {
-      const sessionId = getBlogBriefSessionId();
-
-      if (!sessionId) {
-        setAccessState("denied");
-        return false;
+        setLockedSessionId(sessionId);
       }
 
       try {
         const response = await fetch(`/api/stripe/verify?session_id=${encodeURIComponent(sessionId)}`);
-        const payload = (await response.json()) as { isPaid?: boolean; selectedPackage?: string };
+        const payload = (await response.json()) as StripeVerifyPayload;
 
         const allowed = response.ok && payload.isPaid === true && payload.selectedPackage === "blog";
-        setAccessState(allowed ? "allowed" : "denied");
-        return allowed;
+
+        if (!allowed) {
+          setAccessState("denied");
+          return null;
+        }
+
+        if (payload.hasBlogBrief || existingLock) {
+          setLockedSessionId(sessionId);
+          setAccessState("locking");
+          await waitForLockedLoadingTime();
+
+          if (!cancelled) {
+            setAccessState("locked");
+          }
+
+          return null;
+        }
+
+        setAccessState("allowed");
+        return payload;
       } catch {
         setAccessState("denied");
-        return false;
+        return null;
       }
     };
 
     const initializeBrief = async () => {
       try {
-        const allowed = await verifyPaymentAccess();
+        const sessionId = getBlogBriefSessionId();
 
-        if (!allowed) {
+        if (!sessionId) {
+          setAccessState("denied");
+          await waitForMinimumLoadingTime();
+          return;
+        }
+
+        const verifiedPayload = await verifyPaymentAccess(sessionId);
+
+        if (!verifiedPayload) {
           await waitForMinimumLoadingTime();
           return;
         }
 
         const raw = window.sessionStorage.getItem(thankYouStorageKey);
+        const storedReceipt = raw ? (JSON.parse(raw) as Partial<ReceiptData>) : null;
+        const nextReceipt = buildReceiptFromVerification(verifiedPayload, storedReceipt);
+        const nextForm = buildFormFromReceipt(nextReceipt);
 
-        if (raw) {
-          const parsed = JSON.parse(raw) as Partial<ReceiptData>;
-
-          if (parsed.selectedPackageValue === "blog") {
-            if (cancelled) {
-              return;
-            }
-
-            setReceipt({
-              fullName: parsed.fullName ?? "",
-              businessName: parsed.businessName ?? "",
-              websiteUrl: parsed.websiteUrl ?? "",
-              whatsappNumber: parsed.whatsappNumber ?? "",
-              whatsappConsent: parsed.whatsappConsent ?? false,
-              selectedPackage: parsed.selectedPackage ?? "SEO Enhancement",
-              selectedPackageValue: "blog",
-              submissionDetails: parsed.submissionDetails ?? undefined,
-              paidAt: parsed.paidAt ?? parsed.submittedAt ?? "",
-              submittedAt: parsed.submittedAt ?? new Date().toISOString(),
-            });
-
-            setForm((current) => ({
-              ...current,
-              targetLocation: parsed.submissionDetails?.targetLocation
-                ? String(parsed.submissionDetails.targetLocation)
-                : "",
-            }));
-          }
+        if (!cancelled) {
+          setReceipt(nextReceipt);
+          setForm(nextForm);
+          window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(nextReceipt));
         }
+
         await waitForMinimumLoadingTime();
 
         if (!cancelled) {
@@ -674,10 +799,6 @@ export function BlogBriefPage() {
 
     return () => {
       cancelled = true;
-
-      if (lockTimeoutId) {
-        window.clearTimeout(lockTimeoutId);
-      }
 
       if (confirmTimeoutId) {
         window.clearTimeout(confirmTimeoutId);
@@ -702,6 +823,12 @@ export function BlogBriefPage() {
     setSubmitting(true);
 
     try {
+      const sessionId = getBlogBriefSessionId();
+
+      if (!sessionId) {
+        throw new Error("We could not verify your Stripe session.");
+      }
+
       const mergedReceipt: ReceiptData = {
         ...receipt,
         submissionDetails: {
@@ -714,33 +841,36 @@ export function BlogBriefPage() {
         submittedAt: new Date().toISOString(),
       };
 
+      await syncBlogBriefStripeMetadata(receipt, form, sessionId);
       window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(mergedReceipt));
-      const sessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+      window.sessionStorage.setItem(thankYouStripeSessionKey, sessionId);
+      window.localStorage.setItem(
+        blogBriefSubmittedStorageKey,
+        JSON.stringify({
+          sessionId,
+          submittedAt: mergedReceipt.submittedAt,
+        } satisfies BlogBriefLockRecord),
+      );
 
-      if (sessionId) {
-        try {
-          await syncBlogBriefStripeMetadata(receipt, form, sessionId);
-        } catch (metadataError) {
-          console.warn("Unable to sync blog brief Stripe metadata.", metadataError);
-        }
+      const trackingSnapshot = readTrackingSnapshotFromBrowser();
 
-        window.localStorage.setItem(
-          blogBriefSubmittedStorageKey,
-          JSON.stringify({
-            sessionId,
-            submittedAt: mergedReceipt.submittedAt,
-          } satisfies BlogBriefLockRecord),
-        );
+      if (trackingSnapshot) {
+        dispatchSiteTarikAnalyticsEvent("site_tarik_blog_brief_submitted", {
+          ...buildBrowserTrackingMetadata(trackingSnapshot),
+          selected_package: "blog",
+          checkout_session_id: sessionId,
+          receipt_code: mergedReceipt.receiptCode ?? "",
+        });
       }
 
-      const stripeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
-      const thankYouUrl = stripeSessionId
-        ? `/thank-you?checkout=success&blog=complete&session_id=${encodeURIComponent(stripeSessionId)}`
+      const thankYouUrl = sessionId
+        ? `/thank-you?checkout=success&blog=complete&session_id=${encodeURIComponent(sessionId)}`
         : "/thank-you?checkout=success&blog=complete";
 
       window.location.assign(thankYouUrl);
-    } catch {
-      setError("We could not save the blog brief. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We could not save the blog brief. Please try again.";
+      setError(message);
       setSubmitting(false);
     }
   };

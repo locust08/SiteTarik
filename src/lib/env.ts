@@ -1,12 +1,8 @@
 import "server-only";
+import { readOptionalEnvValue } from "@/lib/env.shared";
 
 type StripeKeyMode = "live" | "test" | "invalid" | "missing";
-
-function readEnvValue(name: string) {
-  const value = globalThis.process?.env?.[name]?.trim();
-
-  return value && value.length > 0 ? value : null;
-}
+type SiteUrlMode = "valid" | "invalid" | "missing";
 
 function normalizeUrl(value: string) {
   const parsedUrl = new URL(value);
@@ -16,6 +12,19 @@ function normalizeUrl(value: string) {
   }
 
   return parsedUrl.toString().replace(/\/+$/, "");
+}
+
+function getSiteUrlMode(siteUrl: string | null): SiteUrlMode {
+  if (!siteUrl) {
+    return "missing";
+  }
+
+  try {
+    normalizeUrl(siteUrl);
+    return "valid";
+  } catch {
+    return "invalid";
+  }
 }
 
 function getStripeKeyMode(secretKey: string | null): StripeKeyMode {
@@ -35,7 +44,7 @@ function getStripeKeyMode(secretKey: string | null): StripeKeyMode {
 }
 
 export function getRequiredSiteUrl() {
-  const siteUrl = readEnvValue("NEXT_PUBLIC_SITE_URL");
+  const siteUrl = readOptionalEnvValue("NEXT_PUBLIC_SITE_URL");
 
   if (!siteUrl) {
     throw new Error("Missing NEXT_PUBLIC_SITE_URL. Set the canonical SiteTarik URL before deploying.");
@@ -45,7 +54,7 @@ export function getRequiredSiteUrl() {
 }
 
 export function getRequiredStripeSecretKey() {
-  const secretKey = readEnvValue("STRIPE_SECRET_KEY");
+  const secretKey = readOptionalEnvValue("STRIPE_SECRET_KEY");
 
   if (!secretKey) {
     throw new Error("Missing STRIPE_SECRET_KEY. Configure it in your deployment environment before calling Stripe.");
@@ -59,12 +68,14 @@ export function getRequiredStripeSecretKey() {
 }
 
 export function getStripeEnvironmentSnapshot() {
-  const secretKey = readEnvValue("STRIPE_SECRET_KEY");
-  const siteUrl = readEnvValue("NEXT_PUBLIC_SITE_URL");
+  const secretKey = readOptionalEnvValue("STRIPE_SECRET_KEY");
+  const siteUrl = readOptionalEnvValue("NEXT_PUBLIC_SITE_URL");
+  const siteUrlMode = getSiteUrlMode(siteUrl);
 
   return {
     hasStripeSecretKey: Boolean(secretKey),
     stripeKeyMode: getStripeKeyMode(secretKey),
     hasSiteUrl: Boolean(siteUrl),
+    siteUrlMode,
   };
 }

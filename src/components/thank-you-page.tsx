@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -11,7 +11,17 @@ import {
   LoaderCircle,
   Search,
 } from "lucide-react";
-import { orderCompleteStorageKey, thankYouStorageKey, thankYouStripeSessionKey } from "@/lib/order-flow";
+import {
+  formatSiteTarikDateTime,
+  orderCompleteStorageKey,
+  thankYouStorageKey,
+  thankYouStripeSessionKey,
+} from "@/lib/order-flow";
+import {
+  buildBrowserTrackingMetadata,
+  dispatchSiteTarikAnalyticsEvent,
+  readTrackingSnapshotFromBrowser,
+} from "@/lib/tracking/browser";
 
 type ReceiptData = {
   fullName: string;
@@ -22,7 +32,38 @@ type ReceiptData = {
   selectedPackage: string;
   selectedPackageValue: string;
   submissionDetails?: Record<string, string | string[]>;
+  paidAt?: string;
   submittedAt: string;
+  receiptCode?: string;
+};
+
+type StripeVerifyPayload = {
+  isPaid?: boolean;
+  selectedPackage?: string;
+  paidAtIso?: string | null;
+  receiptCode?: string | null;
+  hasBlogBrief?: boolean;
+  order?: {
+    packageTitle?: string;
+    fullName?: string;
+    businessName?: string;
+    websiteUrl?: string;
+    whatsappNumber?: string;
+    targetLocation?: string;
+    receiptCode?: string;
+  };
+  blog?: {
+    briefBusinessDescription?: string;
+    mainProductsServices?: string;
+    targetKeywords?: string;
+    targetLocation?: string;
+    mainGoal?: string;
+    idealCustomers?: string;
+    topicsToCover?: string;
+    ctaText?: string;
+    pagesToPush?: string;
+    additionalNotes?: string;
+  };
 };
 
 const fallbackReceipt: ReceiptData = {
@@ -66,6 +107,132 @@ const blogFieldLabels: Array<[string, string]> = [
   ["additionalNotes", "Additional notes"],
 ];
 
+const ctaOptions = [
+  "WhatsApp us",
+  "Get a quote",
+  "Book a call",
+  "Request consultation",
+  "View package",
+  "Claim offer",
+  "Learn more",
+  "Contact us",
+];
+
+function getStoredFieldValue(
+  fields: Record<string, string | string[]> | undefined,
+  key: string,
+) {
+  const rawValue = fields?.[key];
+
+  if (Array.isArray(rawValue)) {
+    return rawValue[0] ?? "";
+  }
+
+  return rawValue ?? "";
+}
+
+function pickMoreCompleteValue(...values: Array<string | undefined>) {
+  return values
+    .map((value) => value?.trim() ?? "")
+    .reduce((best, current) => (current.length > best.length ? current : best), "");
+}
+
+function getVerificationCtaState(ctaText: string | undefined) {
+  const normalizedCtaText = ctaText?.trim() ?? "";
+
+  if (!normalizedCtaText) {
+    return {
+      preferredCTA: "",
+      customCTA: "",
+    };
+  }
+
+  if (ctaOptions.includes(normalizedCtaText)) {
+    return {
+      preferredCTA: normalizedCtaText,
+      customCTA: "",
+    };
+  }
+
+  return {
+    preferredCTA: "Other CTA",
+    customCTA: normalizedCtaText,
+  };
+}
+
+function buildReceiptFromVerification(
+  payload: StripeVerifyPayload,
+  storedReceipt: Partial<ReceiptData> | null,
+) {
+  const order = payload.order ?? {};
+  const blog = payload.blog ?? {};
+  const storedSubmissionDetails = storedReceipt?.submissionDetails;
+  const ctaState = getVerificationCtaState(blog.ctaText);
+  const submissionDetails = {
+    ...(storedSubmissionDetails ?? {}),
+    targetLocation: pickMoreCompleteValue(
+      blog.targetLocation,
+      order.targetLocation,
+      getStoredFieldValue(storedSubmissionDetails, "targetLocation"),
+    ),
+    briefBusinessDescription: pickMoreCompleteValue(
+      blog.briefBusinessDescription,
+      getStoredFieldValue(storedSubmissionDetails, "briefBusinessDescription"),
+    ),
+    mainProductsServices: pickMoreCompleteValue(
+      blog.mainProductsServices,
+      getStoredFieldValue(storedSubmissionDetails, "mainProductsServices"),
+    ),
+    targetKeywords: pickMoreCompleteValue(
+      blog.targetKeywords,
+      getStoredFieldValue(storedSubmissionDetails, "targetKeywords"),
+    ),
+    mainGoal: pickMoreCompleteValue(
+      blog.mainGoal,
+      getStoredFieldValue(storedSubmissionDetails, "mainGoal"),
+    ),
+    idealCustomers: pickMoreCompleteValue(
+      blog.idealCustomers,
+      getStoredFieldValue(storedSubmissionDetails, "idealCustomers"),
+    ),
+    topicsToCover: pickMoreCompleteValue(
+      blog.topicsToCover,
+      getStoredFieldValue(storedSubmissionDetails, "topicsToCover"),
+    ),
+    preferredCTA: pickMoreCompleteValue(
+      ctaState.preferredCTA,
+      getStoredFieldValue(storedSubmissionDetails, "preferredCTA"),
+    ),
+    customCTA: pickMoreCompleteValue(
+      ctaState.customCTA,
+      getStoredFieldValue(storedSubmissionDetails, "customCTA"),
+    ),
+    pagesToPush: pickMoreCompleteValue(
+      blog.pagesToPush,
+      getStoredFieldValue(storedSubmissionDetails, "pagesToPush"),
+    ),
+    additionalNotes: pickMoreCompleteValue(
+      blog.additionalNotes,
+      getStoredFieldValue(storedSubmissionDetails, "additionalNotes"),
+    ),
+  };
+
+  return {
+    fullName: order.fullName || storedReceipt?.fullName || fallbackReceipt.fullName,
+    businessName: order.businessName || storedReceipt?.businessName || fallbackReceipt.businessName,
+    websiteUrl: order.websiteUrl || storedReceipt?.websiteUrl || fallbackReceipt.websiteUrl,
+    whatsappNumber: order.whatsappNumber || storedReceipt?.whatsappNumber || fallbackReceipt.whatsappNumber,
+    whatsappConsent: storedReceipt?.whatsappConsent ?? false,
+    selectedPackage: order.packageTitle || storedReceipt?.selectedPackage || fallbackReceipt.selectedPackage,
+    selectedPackageValue:
+      payload.selectedPackage || storedReceipt?.selectedPackageValue || fallbackReceipt.selectedPackageValue,
+    submissionDetails,
+    paidAt: payload.paidAtIso ?? storedReceipt?.paidAt ?? storedReceipt?.submittedAt ?? "",
+    submittedAt: storedReceipt?.submittedAt ?? payload.paidAtIso ?? "",
+    receiptCode: payload.receiptCode ?? order.receiptCode ?? storedReceipt?.receiptCode ?? "",
+  } satisfies ReceiptData;
+}
+
 function SummaryRow({
   label,
   value,
@@ -93,11 +260,11 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div className="grid gap-1.5 border-b border-[rgba(0,0,0,0.06)] py-3 last:border-b-0 sm:grid-cols-[0.9fr_1.1fr] sm:items-start">
+    <div className="grid gap-2 border-b border-[rgba(0,0,0,0.06)] py-4 last:border-b-0 md:grid-cols-[minmax(11rem,0.72fr)_minmax(0,1.28fr)] md:gap-8 md:items-start">
       <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgba(17,17,17,0.68)]">
         {label}
       </dt>
-      <dd className="min-w-0 whitespace-normal break-words text-sm leading-6 text-[#111111] [overflow-wrap:anywhere] sm:text-right">
+      <dd className="min-w-0 whitespace-pre-wrap break-words text-left text-sm leading-7 text-[#111111] [overflow-wrap:anywhere]">
         {value}
       </dd>
     </div>
@@ -122,6 +289,7 @@ export function ThankYouPage({
   const [now, setNow] = useState(() => Date.now());
   const [stripeReceiptUrl, setStripeReceiptUrl] = useState<string | null>(null);
   const [isResolvingReceipt, setIsResolvingReceipt] = useState(false);
+  const checkoutSuccessTrackedSessionRef = useRef<string | null>(null);
   const isBlogPackage = receipt.selectedPackageValue === "blog";
   const confirmationPaddingClass = isBlogPackage
     ? "pb-3 sm:pb-4 lg:pb-4"
@@ -200,6 +368,50 @@ export function ThankYouPage({
       }
     };
   }, [initialStripeSessionId, isActiveCheckout]);
+
+  useEffect(() => {
+    if (!stripeSessionId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const syncReceiptFromStripe = async () => {
+      try {
+        const response = await fetch(
+          `/api/stripe/verify?session_id=${encodeURIComponent(stripeSessionId)}`,
+          { signal: controller.signal },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as StripeVerifyPayload;
+
+        if (payload.isPaid !== true) {
+          return;
+        }
+
+        const rawReceipt = window.sessionStorage.getItem(thankYouStorageKey);
+        const storedReceipt = rawReceipt ? (JSON.parse(rawReceipt) as Partial<ReceiptData>) : null;
+        const nextReceipt = buildReceiptFromVerification(payload, storedReceipt);
+
+        setReceipt(nextReceipt);
+        window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(nextReceipt));
+      } catch (error) {
+        if ((error as { name?: string }).name === "AbortError") {
+          return;
+        }
+      }
+    };
+
+    void syncReceiptFromStripe();
+
+    return () => {
+      controller.abort();
+    };
+  }, [stripeSessionId]);
 
   useEffect(() => {
     const applyScrollLock = () => {
@@ -285,15 +497,62 @@ export function ThankYouPage({
     window.localStorage.setItem(orderCompleteStorageKey, orderCompleteValue);
   }, [phase, stripeSessionId]);
 
-  const receivedAt = receipt.submittedAt
-    ? new Date(receipt.submittedAt).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
+  useEffect(() => {
+    if (phase !== "ready" || !stripeSessionId) {
+      return;
+    }
+
+    if (checkoutSuccessTrackedSessionRef.current === stripeSessionId) {
+      return;
+    }
+
+    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
+    if (!trackingSnapshot) {
+      return;
+    }
+
+    dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_success", {
+      ...buildBrowserTrackingMetadata(trackingSnapshot),
+      selected_package: receipt.selectedPackageValue,
+      package_title: receipt.selectedPackage,
+      checkout_session_id: stripeSessionId,
+      receipt_code: receipt.receiptCode ?? "",
+    });
+    checkoutSuccessTrackedSessionRef.current = stripeSessionId;
+  }, [
+    phase,
+    receipt.receiptCode,
+    receipt.selectedPackage,
+    receipt.selectedPackageValue,
+    stripeSessionId,
+  ]);
+
+  const receivedAt = receipt.paidAt
+    ? formatSiteTarikDateTime(receipt.paidAt)
+    : receipt.submittedAt
+      ? formatSiteTarikDateTime(receipt.submittedAt)
+      : "";
+  const countdownStart = receipt.paidAt ?? receipt.submittedAt;
+  const countdownLabel = countdownStart
+    ? formatCountdown(new Date(countdownStart).getTime() + oneHourMs - now)
     : "";
-  const countdownLabel = receipt.submittedAt
-    ? formatCountdown(new Date(receipt.submittedAt).getTime() + oneHourMs - now)
-    : "";
+
+  const handleWhatsAppClick = () => {
+    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
+    if (!trackingSnapshot) {
+      return;
+    }
+
+    dispatchSiteTarikAnalyticsEvent("site_tarik_whatsapp_click", {
+      ...buildBrowserTrackingMetadata(trackingSnapshot),
+      selected_package: receipt.selectedPackageValue,
+      package_title: receipt.selectedPackage,
+      checkout_session_id: stripeSessionId ?? "",
+      receipt_code: receipt.receiptCode ?? "",
+    });
+  };
 
   const handleDownloadReceipt = async () => {
     if (!stripeSessionId) {
@@ -314,6 +573,18 @@ export function ThankYouPage({
         }
 
         setStripeReceiptUrl(payload.receiptUrl);
+        const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
+        if (trackingSnapshot) {
+          dispatchSiteTarikAnalyticsEvent("site_tarik_receipt_download", {
+            ...buildBrowserTrackingMetadata(trackingSnapshot),
+            selected_package: receipt.selectedPackageValue,
+            package_title: receipt.selectedPackage,
+            checkout_session_id: stripeSessionId,
+            receipt_code: receipt.receiptCode ?? "",
+          });
+        }
+
         window.open(payload.receiptUrl, "_blank", "noopener,noreferrer");
         return;
       } catch {
@@ -321,6 +592,18 @@ export function ThankYouPage({
       } finally {
         setIsResolvingReceipt(false);
       }
+    }
+
+    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
+    if (trackingSnapshot) {
+      dispatchSiteTarikAnalyticsEvent("site_tarik_receipt_download", {
+        ...buildBrowserTrackingMetadata(trackingSnapshot),
+        selected_package: receipt.selectedPackageValue,
+        package_title: receipt.selectedPackage,
+        checkout_session_id: stripeSessionId,
+        receipt_code: receipt.receiptCode ?? "",
+      });
     }
 
     window.open(stripeReceiptUrl, "_blank", "noopener,noreferrer");
@@ -404,6 +687,7 @@ export function ThankYouPage({
                   href="https://wa.me/60123456789"
                   target="_blank"
                   rel="noreferrer"
+                  onClick={handleWhatsAppClick}
                   className="font-semibold text-[var(--foreground)] transition-colors duration-200 hover:text-[#25D366]"
                 >
                   <span className="md:hidden">Questions? WhatsApp us.</span>
@@ -493,6 +777,7 @@ export function ThankYouPage({
             </div>
 
             <dl className="mt-2.5">
+              {receipt.receiptCode ? <SummaryRow label="Receipt Code" value={receipt.receiptCode} /> : null}
               <SummaryRow label="Full Name" value={receipt.fullName} />
               <SummaryRow label="Business Name" value={receipt.businessName} />
               <SummaryRow label="Website URL" value={receipt.websiteUrl} />
@@ -540,6 +825,7 @@ export function ThankYouPage({
                 href="https://wa.me/60123456789"
                 target="_blank"
                 rel="noreferrer"
+                onClick={handleWhatsAppClick}
                 className="group/whatsapp inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#1fb85a] hover:shadow-[0_10px_22px_rgba(37,211,102,0.16)]"
               >
                 WhatsApp Us
@@ -580,8 +866,8 @@ export function ThankYouPage({
           aria-label="Blog brief review"
           onClick={() => setIsBlogReviewOpen(false)}
         >
-            <div
-            className="w-full max-w-[760px] overflow-hidden rounded-[1.8rem] border border-white/12 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
+          <div
+            className="w-full max-w-[880px] overflow-hidden rounded-[1.8rem] border border-white/12 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4 sm:px-6">
@@ -602,7 +888,7 @@ export function ThankYouPage({
               </button>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto px-5 py-5 sm:px-6">
+            <div className="max-h-[72vh] overflow-y-auto px-5 py-5 sm:px-6">
               <div className="grid gap-4">
                 {blogFieldLabels.map(([key, label]) => {
                   const rawValue = receipt.submissionDetails?.[key];

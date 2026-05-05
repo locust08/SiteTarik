@@ -8,6 +8,7 @@ import {
   logServerError,
   logServerEvent,
 } from "@/lib/server-debug";
+import { getSiteTarikPackageTitle } from "@/lib/order-flow";
 
 type StripeMetadataValue = string | string[] | number | boolean | null | undefined;
 
@@ -43,7 +44,7 @@ function getStringParam(value: string | string[] | undefined) {
 }
 
 function trimMetadataValue(value: string | undefined) {
-  return value?.trim().slice(0, 120) ?? "";
+  return value?.trim().slice(0, 500) ?? "";
 }
 
 function getMetadataValue(
@@ -70,12 +71,16 @@ function buildOrderMetadata(
   sessionMetadata: Record<string, string | undefined>,
 ) {
   const orderDetails = payload.orderDetails ?? {};
+  const sessionSelectedPackage = trimMetadataValue(sessionMetadata.selectedPackage);
+  const fallbackSelectedPackage = trimMetadataValue(
+    payload.selectedPackage ?? getStringParam(orderDetails.selectedPackage as string | string[] | undefined),
+  );
+  const resolvedSelectedPackage = sessionSelectedPackage || fallbackSelectedPackage;
+  const packageTitle = trimMetadataValue(sessionMetadata.packageTitle) || getSiteTarikPackageTitle(resolvedSelectedPackage);
 
   return {
-    selectedPackage: getMetadataValue(
-      payload.selectedPackage ?? orderDetails.selectedPackage,
-      sessionMetadata.selectedPackage,
-    ),
+    selectedPackage: resolvedSelectedPackage,
+    packageTitle,
     fullName: getMetadataValue(payload.fullName ?? orderDetails.fullName, sessionMetadata.fullName),
     businessName: getMetadataValue(
       payload.businessName ?? orderDetails.businessName,
@@ -200,19 +205,16 @@ export async function POST(request: Request) {
 
     const blogMetadata = buildBlogMetadata(payload, sessionMetadata);
     const isBlogPackage = selectedPackage === "blog";
+    const metadataToSave = isBlogPackage
+      ? { ...orderFields, ...blogMetadata }
+      : orderFields;
 
     if (isBlogPackage && !hasBlogBriefFields(orderFields, blogMetadata)) {
       return Response.json({ error: "Missing required blog brief metadata." }, { status: 400 });
     }
 
     const metadataFormData = new URLSearchParams();
-    replaceStripeMetadata(metadataFormData, "metadata", orderFields, stripeManagedMetadataKeys);
-    if (isBlogPackage) {
-      replaceStripeMetadata(metadataFormData, "metadata", {
-        ...orderFields,
-        ...blogMetadata,
-      }, stripeManagedMetadataKeys);
-    }
+    replaceStripeMetadata(metadataFormData, "metadata", metadataToSave, stripeManagedMetadataKeys);
 
     await stripeApiRequest(`/checkout/sessions/${encodeURIComponent(sessionId)}`, {
       method: "POST",
@@ -227,7 +229,7 @@ export async function POST(request: Request) {
       replaceStripeMetadata(
         paymentIntentFormData,
         "metadata",
-        isBlogPackage ? { ...orderFields, ...blogMetadata } : orderFields,
+        metadataToSave,
         stripeManagedMetadataKeys,
       );
 
@@ -253,7 +255,7 @@ export async function POST(request: Request) {
             replaceStripeMetadata(
               chargeFormData,
               "metadata",
-              { ...orderFields, ...blogMetadata },
+              metadataToSave,
               stripeManagedMetadataKeys,
             );
             await stripeApiRequest(`/charges/${encodeURIComponent(chargeId)}`, {
@@ -279,7 +281,7 @@ export async function POST(request: Request) {
       replaceStripeMetadata(
         subscriptionFormData,
         "metadata",
-        isBlogPackage ? { ...orderFields, ...blogMetadata } : orderFields,
+        metadataToSave,
         stripeManagedMetadataKeys,
       );
 

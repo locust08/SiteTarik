@@ -10,6 +10,7 @@ import { ctaClassName } from "@/components/cta-link";
 import {
   blogBriefSubmittedStorageKey,
   orderCompleteStorageKey,
+  parseSiteTarikOrderCompletion,
   thankYouStorageKey,
   thankYouStripeSessionKey,
 } from "@/lib/order-flow";
@@ -419,8 +420,14 @@ export function WebsiteSubmissionSection({
 
   useEffect(() => {
     try {
-      const storedCompletion = window.localStorage.getItem(orderCompleteStorageKey);
-      setCompletionState(storedCompletion);
+      const storedCompletion = parseSiteTarikOrderCompletion(
+        window.localStorage.getItem(orderCompleteStorageKey),
+      );
+      const activeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+      const isActiveCompletion =
+        Boolean(activeSessionId) && storedCompletion?.sessionId === activeSessionId;
+
+      setCompletionState(isActiveCompletion ? storedCompletion.sessionId : null);
     } catch {
       setCompletionState(null);
     }
@@ -583,16 +590,17 @@ export function WebsiteSubmissionSection({
     setIsSubmitting(true);
 
     const trackingSnapshot = readTrackingSnapshotFromBrowser();
+    const packageDetails = packagePlans.find((plan) => plan.value === selectedPackage);
 
     if (trackingSnapshot) {
       dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_started", {
         ...buildBrowserTrackingMetadata(trackingSnapshot),
         selected_package: selectedPackage,
+        package_title: packageDetails?.title ?? selectedPackage,
         business_type: resolvedBusinessType,
       });
     }
 
-    const packageDetails = packagePlans.find((plan) => plan.value === selectedPackage);
     const submissionDetails = {
       ...websiteForm,
       businessType: resolvedBusinessType,
@@ -609,6 +617,14 @@ export function WebsiteSubmissionSection({
       paidAt: new Date().toISOString(),
       submittedAt: new Date().toISOString(),
     };
+
+    try {
+      window.localStorage.removeItem(orderCompleteStorageKey);
+      window.localStorage.removeItem(blogBriefSubmittedStorageKey);
+      window.sessionStorage.removeItem(thankYouStripeSessionKey);
+    } catch {
+      // Ignore storage cleanup failures and continue with checkout.
+    }
 
     window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(receiptData));
 
@@ -647,10 +663,22 @@ export function WebsiteSubmissionSection({
         throw new Error("Checkout was created without a redirect URL.");
       }
 
+      const nextReceiptData = {
+        ...receiptData,
+        receiptCode: payload.receiptCode ?? "",
+      };
+
+      window.sessionStorage.setItem(thankYouStorageKey, JSON.stringify(nextReceiptData));
+
+      if (payload.id) {
+        window.sessionStorage.setItem(thankYouStripeSessionKey, payload.id);
+      }
+
       if (trackingSnapshot) {
         dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_redirected", {
           ...buildBrowserTrackingMetadata(trackingSnapshot),
           selected_package: selectedPackage,
+          package_title: packageDetails?.title ?? selectedPackage,
           checkout_session_id: payload.id ?? "",
           receipt_code: payload.receiptCode ?? "",
         });

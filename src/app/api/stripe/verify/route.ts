@@ -7,6 +7,7 @@ import {
   logServerError,
   logServerEvent,
 } from "@/lib/server-debug";
+import { getSiteTarikPackageTitle, isSiteTarikPackagePlan } from "@/lib/order-flow";
 
 function getStringParam(value: string | string[] | undefined) {
   if (Array.isArray(value)) {
@@ -17,7 +18,7 @@ function getStringParam(value: string | string[] | undefined) {
 }
 
 function trimMetadataValue(value: string | undefined) {
-  return value?.trim().slice(0, 120) ?? "";
+  return value?.trim().slice(0, 500) ?? "";
 }
 
 function getTimestampIso(timestamp?: number | null) {
@@ -26,6 +27,17 @@ function getTimestampIso(timestamp?: number | null) {
   }
 
   return new Date(timestamp * 1000).toISOString();
+}
+
+function hasSubmittedBlogBrief(metadata: Record<string, string | undefined>) {
+  return Boolean(
+    trimMetadataValue(metadata.briefBusinessDescription) &&
+      trimMetadataValue(metadata.mainProductsServices) &&
+      trimMetadataValue(metadata.mainGoal) &&
+      trimMetadataValue(metadata.targetKeywords) &&
+      trimMetadataValue(metadata.targetLocation) &&
+      trimMetadataValue(metadata.ctaText),
+  );
 }
 
 export async function GET(request: Request) {
@@ -54,13 +66,14 @@ export async function GET(request: Request) {
     }>(`/checkout/sessions/${encodeURIComponent(sessionId)}`);
     const metadata = session.metadata ?? {};
     const selectedPackage = trimMetadataValue(metadata.selectedPackage);
+    const packageTitle = trimMetadataValue(metadata.packageTitle) || getSiteTarikPackageTitle(selectedPackage);
     const isPaid =
       session.status === "complete" &&
       session.payment_status === "paid" &&
-      (selectedPackage === "blog" || selectedPackage === "core");
+      isSiteTarikPackagePlan(selectedPackage);
     const order = {
       selectedPackage,
-      packageTitle: trimMetadataValue(metadata.packageTitle),
+      packageTitle,
       fullName: trimMetadataValue(metadata.fullName),
       businessName: trimMetadataValue(metadata.businessName),
       websiteUrl: trimMetadataValue(metadata.websiteUrl),
@@ -71,16 +84,18 @@ export async function GET(request: Request) {
       receiptCode: trimMetadataValue(metadata.receiptCode),
     };
     const blog = {
+      briefBusinessDescription: trimMetadataValue(metadata.briefBusinessDescription),
+      mainProductsServices: trimMetadataValue(metadata.mainProductsServices),
       mainGoal: trimMetadataValue(metadata.mainGoal),
-      primaryKeyword: trimMetadataValue(metadata.primaryKeyword),
-      secondaryKeywords: trimMetadataValue(metadata.secondaryKeywords),
-      toneOfWriting: trimMetadataValue(metadata.toneOfWriting),
-      audienceShort: trimMetadataValue(metadata.audienceShort),
-      blogTopicIdeas: trimMetadataValue(metadata.blogTopicIdeas),
+      targetKeywords: trimMetadataValue(metadata.targetKeywords),
+      targetLocation: trimMetadataValue(metadata.targetLocation),
+      idealCustomers: trimMetadataValue(metadata.idealCustomers),
+      topicsToCover: trimMetadataValue(metadata.topicsToCover),
       ctaText: trimMetadataValue(metadata.ctaText),
       pagesToPush: trimMetadataValue(metadata.pagesToPush),
       additionalNotes: trimMetadataValue(metadata.additionalNotes),
     };
+    const hasBlogBrief = selectedPackage === "blog" && hasSubmittedBlogBrief(metadata);
     const paidAtIso =
       session.mode === "payment"
         ? await (async () => {
@@ -140,6 +155,7 @@ export async function GET(request: Request) {
       selectedPackage,
       receiptCode: order.receiptCode,
       paidAtIso,
+      hasBlogBrief,
       order,
       blog,
     });

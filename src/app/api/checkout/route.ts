@@ -192,10 +192,12 @@ export async function POST(request: Request) {
     formData.set("cancel_url", `${baseUrl}/#contact`);
     const orderMetadata = {
       selectedPackage,
+      packageTitle: packageDetails.title,
       fullName: resolvedFullName,
       businessName: resolvedBusinessName,
       websiteUrl: resolvedWebsiteUrl,
       whatsappNumber: resolvedWhatsAppNumber,
+      whatsappConsent: "true",
       businessType: resolvedBusinessType,
       targetLocation: resolvedTargetLocation,
       receiptCode,

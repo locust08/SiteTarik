@@ -57,27 +57,6 @@ window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
             </noscript>
           </>
         ) : null}
-        {!analyticsConfig.hasGtm && analyticsConfig.hasGa4 ? (
-          <>
-            <Script
-              id="site-tarik-ga4"
-              strategy="afterInteractive"
-              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.ga4MeasurementId}`}
-            />
-            <Script
-              id="site-tarik-ga4-init"
-              strategy="beforeInteractive"
-              dangerouslySetInnerHTML={{
-                __html: `
-window.dataLayer = window.dataLayer || [];
-function gtag(){window.dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${analyticsConfig.ga4MeasurementId}', { send_page_view: false });
-`,
-              }}
-            />
-          </>
-        ) : null}
         {children}
         <Suspense fallback={null}>
           <SiteTarikAnalytics />

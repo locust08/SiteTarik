@@ -6,8 +6,57 @@ export const orderCompleteStorageKey = "siteTarikOrderComplete";
 export const blogBriefSubmittedStorageKey = "siteTarikBlogBriefSubmitted";
 export const siteTarikTimeZone = "Asia/Kuala_Lumpur";
 
+export type SiteTarikPackagePlan = "core" | "blog";
+
+export const siteTarikPackageTitles: Record<SiteTarikPackagePlan, string> = {
+  core: "Core Reborn",
+  blog: "SEO Enhancement",
+};
+
+export type SiteTarikOrderCompletionState = {
+  sessionId: string;
+  completedAt: string;
+};
+
+export function isSiteTarikPackagePlan(
+  value: string | null | undefined,
+): value is SiteTarikPackagePlan {
+  return value === "core" || value === "blog";
+}
+
+export function getSiteTarikPackageTitle(
+  selectedPackage: string | null | undefined,
+) {
+  return isSiteTarikPackagePlan(selectedPackage)
+    ? siteTarikPackageTitles[selectedPackage]
+    : siteTarikPackageTitles.core;
+}
+
 export function getThankYouReceiptUrlKey(sessionId?: string | null) {
   return sessionId ? `siteTarikReceiptUrl:${sessionId}` : "siteTarikReceiptUrl";
+}
+
+export function parseSiteTarikOrderCompletion(
+  rawValue: string | null | undefined,
+) {
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<SiteTarikOrderCompletionState>;
+
+    if (!parsed.sessionId?.trim()) {
+      return null;
+    }
+
+    return {
+      sessionId: parsed.sessionId.trim(),
+      completedAt: parsed.completedAt?.trim() ?? "",
+    } satisfies SiteTarikOrderCompletionState;
+  } catch {
+    return null;
+  }
 }
 
 export function formatSiteTarikDateTime(isoString: string) {
