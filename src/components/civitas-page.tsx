@@ -124,15 +124,15 @@ const services: Service[] = [
     index: "04",
     title: "Blog Add-On",
     description:
-      "Add 12 blog pages with stronger structure, weekly release scheduling for 12 weeks, basic SEO, hosting, and WhatsApp delivery.",
+      "Add 12 blog pages with stronger structure, basic SEO, hosting, and WhatsApp delivery.",
     emphasis: "12 blog pages",
   },
   {
     index: "05",
-    title: "Blog Structure & Weekly Flow",
+    title: "Blog Structure Support",
     description:
-      "The blog content structure is tightened so each weekly release stays clear, consistent, and search-friendly over time.",
-    emphasis: "each weekly release",
+      "The blog content structure is tightened so all 12 pages stay clear, consistent, and search-friendly.",
+    emphasis: "clear structure",
   },
 ];
 
@@ -262,7 +262,7 @@ const pricingCoreIncludes = [
 const pricingBlogIncludes = [
   "12 blog pages",
   "Stronger structure and layout",
-  "Weekly release schedule",
+  "Clear blog content structure",
   "Basic SEO setup",
   "Hosted output",
   "WhatsApp delivery",
@@ -368,7 +368,7 @@ export function CivitasPage() {
   const selectedPackageLabel = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageTitle = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageDescription = isBlogPackage
-    ? "SEO Enhancement includes the Core Reborn handoff plus 12 weekly blog releases for stronger visibility."
+    ? "SEO Enhancement includes the Core Reborn handoff plus 12 SEO-friendly blog pages."
     : "Core Reborn gives you a clean website refresh with basic SEO, hosting, and WhatsApp delivery.";
   const selectedPackageIncludes = isBlogPackage
     ? pricingBlogIncludes
@@ -943,7 +943,7 @@ export function CivitasPage() {
               <div className="mx-auto flex max-w-[46rem] flex-col items-center gap-4">
                 <p className="max-w-[34rem] text-base leading-8 text-[var(--muted)]">
                   Website reborn from <span className="text-[#ee2028]">RM100/year</span>, plus an optional <span className="text-[#ee2028]">RM120</span> Blog Add-On for
-                  12 pages over 12 weeks.
+                  {" "}a 12-page upgrade.
                 </p>
                 <CtaLink href="#contact" variant="soft">
                   Check If Your Website Fits

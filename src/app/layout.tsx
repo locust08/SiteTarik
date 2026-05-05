@@ -10,7 +10,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SiteTarik | WordPress & CMS Website Upgrade for Small Business",
   description:
-    "One-to-one website refresh for small business WordPress, Drupal, Joomla, and similar CMS sites, with basic SEO or the SEO Enhancement plan for longer-term visibility.",
+    "One-to-one website refresh for small business WordPress, Drupal, Joomla, and similar CMS sites, with basic SEO or the SEO Enhancement 12-page blog add-on.",
   icons: {
     icon: "/icon.png?v=20260411b",
     shortcut: "/icon.png?v=20260411b",

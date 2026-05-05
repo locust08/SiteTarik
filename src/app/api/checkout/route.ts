@@ -46,7 +46,7 @@ const packageConfig: Record<
   blog: {
     title: "SEO Enhancement",
     amount: 22000,
-    description: "One-time SEO enhancement package with 12 weekly blog releases.",
+    description: "One-time SEO enhancement package with a 12-page blog add-on.",
     mode: "payment",
   },
 };
