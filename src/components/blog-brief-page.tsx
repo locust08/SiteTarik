@@ -31,6 +31,7 @@ type BlogBriefForm = {
 
 type ReceiptData = {
   fullName: string;
+  email?: string;
   businessName: string;
   websiteUrl: string;
   whatsappNumber: string;
@@ -583,6 +584,7 @@ function buildReceiptFromVerification(
 
   return {
     fullName: order.fullName || storedReceipt?.fullName || "",
+    email: storedReceipt?.email ?? "",
     businessName: order.businessName || storedReceipt?.businessName || "",
     websiteUrl: order.websiteUrl || storedReceipt?.websiteUrl || "",
     whatsappNumber: order.whatsappNumber || storedReceipt?.whatsappNumber || "",

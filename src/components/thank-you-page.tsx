@@ -25,6 +25,7 @@ import {
 
 type ReceiptData = {
   fullName: string;
+  email?: string;
   businessName: string;
   websiteUrl: string;
   whatsappNumber: string;
@@ -219,6 +220,7 @@ function buildReceiptFromVerification(
 
   return {
     fullName: order.fullName || storedReceipt?.fullName || fallbackReceipt.fullName,
+    email: storedReceipt?.email ?? "",
     businessName: order.businessName || storedReceipt?.businessName || fallbackReceipt.businessName,
     websiteUrl: order.websiteUrl || storedReceipt?.websiteUrl || fallbackReceipt.websiteUrl,
     whatsappNumber: order.whatsappNumber || storedReceipt?.whatsappNumber || fallbackReceipt.whatsappNumber,

@@ -24,6 +24,7 @@ type PackagePlan = "core" | "blog";
 
 type WebsiteSubmissionForm = {
   fullName: string;
+  email: string;
   businessName: string;
   websiteUrl: string;
   whatsappNumber: string;
@@ -100,6 +101,7 @@ const mainGoalOptions = [
 
 const fieldCharacterLimits: Record<keyof WebsiteSubmissionForm, number> = {
   fullName: 80,
+  email: 120,
   businessName: 70,
   websiteUrl: 200,
   whatsappNumber: 14,
@@ -131,6 +133,7 @@ const fieldCharacterLimits: Record<keyof WebsiteSubmissionForm, number> = {
 
 const initialWebsiteSubmissionForm: WebsiteSubmissionForm = {
   fullName: "",
+  email: "",
   businessName: "",
   websiteUrl: "",
   whatsappNumber: "+60",
@@ -607,6 +610,7 @@ export function WebsiteSubmissionSection({
     };
     const receiptData = {
       fullName: websiteForm.fullName,
+      email: websiteForm.email,
       businessName: websiteForm.businessName,
       websiteUrl: websiteForm.websiteUrl,
       whatsappNumber: websiteForm.whatsappNumber,
@@ -637,6 +641,7 @@ export function WebsiteSubmissionSection({
         body: JSON.stringify({
           selectedPackage,
           fullName: websiteForm.fullName,
+          email: websiteForm.email,
           businessName: websiteForm.businessName,
           websiteUrl: websiteForm.websiteUrl,
           whatsappNumber: websiteForm.whatsappNumber,
@@ -779,16 +784,28 @@ export function WebsiteSubmissionSection({
                 </label>
 
                 <label className="block">
-                  <FieldLabel required>Business Name</FieldLabel>
+                  <FieldLabel required>Email</FieldLabel>
                   <TextInput
-                    name="businessName"
-                    placeholder="Business name"
-                    value={websiteForm.businessName}
+                    name="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={websiteForm.email}
                     onChange={handleWebsiteInputChange}
                     required
                   />
                 </label>
               </div>
+
+              <label className="block">
+                <FieldLabel required>Business Name</FieldLabel>
+                <TextInput
+                  name="businessName"
+                  placeholder="Business name"
+                  value={websiteForm.businessName}
+                  onChange={handleWebsiteInputChange}
+                  required
+                />
+              </label>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block">

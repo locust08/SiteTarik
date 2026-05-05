@@ -17,6 +17,7 @@ type PackagePlan = "core" | "blog";
 type CheckoutRequest = {
   selectedPackage?: PackagePlan;
   fullName?: string;
+  email?: string;
   businessName?: string;
   websiteUrl?: string;
   whatsappNumber?: string;
@@ -66,6 +67,10 @@ function isValidWebsiteUrl(value: string) {
 
 function isValidWhatsAppNumber(value: string) {
   return /^\+60\d{9,11}$/.test(value);
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function createReceiptCode(selectedPackage: PackagePlan) {
@@ -121,6 +126,7 @@ export async function POST(request: Request) {
 
   const packageDetails = packageConfig[selectedPackage];
   const fullName = trimMetadataValue(payload.fullName);
+  const email = trimMetadataValue(payload.email);
   const businessName = trimMetadataValue(payload.businessName);
   const websiteUrl = trimMetadataValue(payload.websiteUrl);
   const whatsappNumber = trimMetadataValue(payload.whatsappNumber);
@@ -133,6 +139,7 @@ export async function POST(request: Request) {
   );
   const submissionDetails = payload.submissionDetails ?? {};
   const submissionFullName = trimMetadataValue(readSubmissionDetail(submissionDetails, "fullName"));
+  const submissionEmail = trimMetadataValue(readSubmissionDetail(submissionDetails, "email"));
   const submissionBusinessName = trimMetadataValue(readSubmissionDetail(submissionDetails, "businessName"));
   const submissionWebsiteUrl = trimMetadataValue(readSubmissionDetail(submissionDetails, "websiteUrl"));
   const submissionWhatsAppNumber = trimMetadataValue(readSubmissionDetail(submissionDetails, "whatsappNumber"));
@@ -140,6 +147,7 @@ export async function POST(request: Request) {
   const submissionTargetLocation = trimMetadataValue(readSubmissionDetail(submissionDetails, "targetLocation"));
 
   const resolvedFullName = fullName || submissionFullName;
+  const resolvedEmail = email || submissionEmail;
   const resolvedBusinessName = businessName || submissionBusinessName;
   const resolvedWebsiteUrl = websiteUrl || submissionWebsiteUrl;
   const resolvedWhatsAppNumber = whatsappNumber || submissionWhatsAppNumber;
@@ -148,6 +156,7 @@ export async function POST(request: Request) {
 
   if (
     !resolvedFullName ||
+    !resolvedEmail ||
     !resolvedBusinessName ||
     !resolvedWebsiteUrl ||
     !resolvedWhatsAppNumber ||
@@ -156,6 +165,13 @@ export async function POST(request: Request) {
   ) {
     return Response.json(
       { error: "Please complete every required field before checkout." },
+      { status: 400 },
+    );
+  }
+
+  if (!isValidEmail(resolvedEmail)) {
+    return Response.json(
+      { error: "Please enter a valid email address." },
       { status: 400 },
     );
   }
@@ -188,6 +204,7 @@ export async function POST(request: Request) {
     const formData = new URLSearchParams();
     formData.set("mode", packageDetails.mode);
     formData.set("allow_promotion_codes", "true");
+    formData.set("customer_email", resolvedEmail);
     formData.set("success_url", `${baseUrl}${successPath}?checkout=success&session_id={CHECKOUT_SESSION_ID}`);
     formData.set("cancel_url", `${baseUrl}/#contact`);
     const orderMetadata = {
@@ -205,6 +222,8 @@ export async function POST(request: Request) {
 
     appendStripeMetadata(formData, "metadata", orderMetadata);
     if (packageDetails.mode === "payment") {
+      formData.set("customer_creation", "always");
+      formData.set("payment_intent_data[receipt_email]", resolvedEmail);
       appendStripeMetadata(formData, "payment_intent_data[metadata]", orderMetadata);
     } else {
       appendStripeMetadata(formData, "subscription_data[metadata]", orderMetadata);
