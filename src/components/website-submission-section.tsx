@@ -78,9 +78,9 @@ const packagePlans: Array<{
     value: "blog",
     title: "SEO Enhancement",
     price: "RM220",
-    summary: "Includes a 12-page blog add-on with stronger structure, SEO, and content direction.",
+    summary: "Includes a 12-page blog launch with strategic structure, SEO, and content direction.",
     highlights: [
-      "12 blog pages generated",
+      "12 blog pages launched together",
       "Clear blog content structure",
       "Stronger structure and layout",
       "Basic SEO, hosting, and WhatsApp delivery",

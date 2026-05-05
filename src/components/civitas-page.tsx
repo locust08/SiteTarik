@@ -124,7 +124,7 @@ const services: Service[] = [
     index: "04",
     title: "Blog Add-On",
     description:
-      "Add 12 blog pages with stronger structure, basic SEO, hosting, and WhatsApp delivery.",
+      "Launch 12 strategically structured blog pages in one go, backed by basic SEO, hosting, and WhatsApp delivery.",
     emphasis: "12 blog pages",
   },
   {
