@@ -7,7 +7,7 @@ import {
   buildStripeAlertCsv,
   buildStripeAlertRecord,
 } from "@/lib/stripe-alerts";
-import { resolveStripeReceiptAttachment } from "@/lib/stripe-receipts";
+import { resolveStripeReceiptEmailAssets } from "@/lib/stripe-receipts";
 import { logServerEvent } from "@/lib/server-debug";
 
 type StripeAlertSessionInput = Parameters<typeof buildStripeAlertRecord>[0];
@@ -52,8 +52,11 @@ async function sendImmediateAlert(
   let receiptUrl: string | null = null;
 
   try {
-    const receipt = await resolveStripeReceiptAttachment(record.sessionId);
-    receiptUrl = receipt.details.receiptUrl;
+    const receipt = await resolveStripeReceiptEmailAssets(record.sessionId, {
+      maxAttempts: alertType === "core_paid" ? 6 : 3,
+      retryDelayMs: alertType === "core_paid" ? 3000 : 1500,
+    });
+    receiptUrl = receipt.details?.receiptUrl ?? null;
     receiptAttachment = receipt.attachment
       ? {
           filename: receipt.attachment.filename,
@@ -71,7 +74,7 @@ async function sendImmediateAlert(
 
   const email =
     alertType === "core_paid"
-      ? buildCoreAlertEmail(record)
+      ? buildCoreAlertEmail(record, receiptUrl)
       : buildBlogAlertEmail(record, receiptUrl);
   const receiptCode = sanitizeFileSegment(record.receiptCode || record.sessionId || "stripe-alert");
   const filePrefix = alertType === "core_paid" ? "core-payment" : "seo-brief";

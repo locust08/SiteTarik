@@ -119,6 +119,7 @@ async function __sitetarikStripeFetch(request, env) {
   };
 
   const trimMetadataValue = (value) => value?.slice(0, 500) ?? "";
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   const isValidWebsiteUrl = (value) => {
     try {
       const parsedUrl = new URL(value);
@@ -179,6 +180,7 @@ async function __sitetarikStripeFetch(request, env) {
     const successPath = selectedPackage === "blog" ? "/blog-brief" : "/thank-you";
     const submissionDetails = payload?.submissionDetails ?? {};
     const fullName = trimMetadataValue(payload?.fullName || readSubmissionDetail(submissionDetails, "fullName"));
+    const email = trimMetadataValue(payload?.email || readSubmissionDetail(submissionDetails, "email"));
     const businessName = trimMetadataValue(payload?.businessName || readSubmissionDetail(submissionDetails, "businessName"));
     const websiteUrl = trimMetadataValue(payload?.websiteUrl || readSubmissionDetail(submissionDetails, "websiteUrl"));
     const whatsappNumber = trimMetadataValue(payload?.whatsappNumber || readSubmissionDetail(submissionDetails, "whatsappNumber"));
@@ -186,9 +188,16 @@ async function __sitetarikStripeFetch(request, env) {
     const businessType = trimMetadataValue(payload?.businessType || readSubmissionDetail(submissionDetails, "businessType"));
     const targetLocation = trimMetadataValue(payload?.targetLocation || readSubmissionDetail(submissionDetails, "targetLocation"));
 
-    if (!fullName || !businessName || !websiteUrl || !whatsappNumber || !businessType || !targetLocation) {
+    if (!fullName || !email || !businessName || !websiteUrl || !whatsappNumber || !businessType || !targetLocation) {
       return Response.json(
         { error: "Please complete every required field before checkout." },
+        { status: 400 },
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return Response.json(
+        { error: "Please enter a valid email address." },
         { status: 400 },
       );
     }
@@ -218,11 +227,13 @@ async function __sitetarikStripeFetch(request, env) {
 
     formData.set("mode", packageDetails.mode);
     formData.set("allow_promotion_codes", "true");
+    formData.set("customer_email", email);
     formData.set("success_url", baseUrl + successPath + "?checkout=success&session_id={CHECKOUT_SESSION_ID}");
     formData.set("cancel_url", baseUrl + "/#contact");
     formData.set("metadata[selectedPackage]", selectedPackage);
     formData.set("metadata[packageTitle]", packageDetails.title);
     formData.set("metadata[fullName]", fullName);
+    formData.set("metadata[email]", email);
     formData.set("metadata[businessName]", businessName);
     formData.set("metadata[websiteUrl]", websiteUrl);
     formData.set("metadata[whatsappNumber]", whatsappNumber);
@@ -238,6 +249,9 @@ async function __sitetarikStripeFetch(request, env) {
 
     if (packageDetails.mode === "subscription") {
       formData.set("line_items[0][price_data][recurring][interval]", "year");
+    } else {
+      formData.set("customer_creation", "always");
+      formData.set("payment_intent_data[receipt_email]", email);
     }
 
     const checkoutSession = await stripeApiRequest("/checkout/sessions", {

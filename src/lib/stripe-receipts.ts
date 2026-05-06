@@ -14,6 +14,11 @@ export type StripeReceiptAttachment = {
   mimeType?: string;
 };
 
+type ResolveStripeReceiptEmailAssetsOptions = {
+  maxAttempts?: number;
+  retryDelayMs?: number;
+};
+
 function getReceiptUrlFromCharge(
   charge: { receipt_url?: string | null } | string | null | undefined,
 ) {
@@ -51,25 +56,71 @@ function sanitizeFileSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-function inferReceiptExtension(receiptUrl: string, contentType: string | null) {
-  if (contentType?.includes("pdf") || /\.pdf(?:$|\?)/i.test(receiptUrl)) {
-    return {
-      extension: "pdf",
-      mimeType: "application/pdf",
-    };
+function wait(delayMs: number) {
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+function isPdfReceipt(receiptUrl: string, contentType: string | null) {
+  return Boolean(contentType?.includes("pdf") || /\.pdf(?:$|\?)/i.test(receiptUrl));
+}
+
+function isHtmlReceipt(receiptUrl: string, contentType: string | null) {
+  return Boolean(
+    contentType?.includes("html") ||
+      /\.(?:html?)(?:$|\?)/i.test(receiptUrl) ||
+      /\/invoice\//i.test(receiptUrl),
+  );
+}
+
+async function renderReceiptUrlToPdf(receiptUrl: string) {
+  // Avoid static bundler resolution so Cloudflare worker builds don't try to
+  // package Playwright into the server runtime.
+  const playwright = (await new Function(
+    'return import("playwright")',
+  )()) as typeof import("playwright");
+  const launchers = [
+    () => playwright.chromium.launch({ channel: "chrome", headless: true }),
+    () => playwright.chromium.launch({ channel: "msedge", headless: true }),
+    () => playwright.chromium.launch({ headless: true }),
+  ];
+
+  let lastError: unknown = null;
+
+  for (const launch of launchers) {
+    let browser: Awaited<ReturnType<typeof playwright.chromium.launch>> | null = null;
+
+    try {
+      browser = await launch();
+      const page = await browser.newPage();
+      await page.goto(receiptUrl, {
+        waitUntil: "networkidle",
+        timeout: 45_000,
+      });
+      await page.emulateMedia({ media: "screen" });
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: {
+          top: "16px",
+          right: "16px",
+          bottom: "16px",
+          left: "16px",
+        },
+      });
+
+      return Buffer.from(pdfBuffer);
+    } catch (error) {
+      lastError = error;
+    } finally {
+      await browser?.close().catch(() => undefined);
+    }
   }
 
-  if (contentType?.includes("html")) {
-    return {
-      extension: "html",
-      mimeType: "text/html; charset=utf-8",
-    };
+  if (lastError instanceof Error) {
+    throw lastError;
   }
 
-  return {
-    extension: "txt",
-    mimeType: "text/plain; charset=utf-8",
-  };
+  throw new Error("Unable to launch a browser for Stripe receipt PDF rendering.");
 }
 
 export async function resolveStripeReceiptDetails(sessionId: string): Promise<StripeReceiptDetails | null> {
@@ -222,16 +273,91 @@ export async function resolveStripeReceiptAttachment(sessionId: string): Promise
   }
 
   const contentType = response.headers.get("content-type");
-  const { extension, mimeType } = inferReceiptExtension(details.receiptUrl, contentType);
   const fileBase = sanitizeFileSegment(details.receiptCode || sessionId || "stripe-receipt");
-  const bytes = await response.arrayBuffer();
+
+  if (isPdfReceipt(details.receiptUrl, contentType)) {
+    const bytes = await response.arrayBuffer();
+
+    return {
+      details,
+      attachment: {
+        filename: `receipt-${fileBase}.pdf`,
+        content: Buffer.from(bytes).toString("base64"),
+        mimeType: "application/pdf",
+      },
+    };
+  }
+
+  if (isHtmlReceipt(details.receiptUrl, contentType)) {
+    const pdfBytes = await renderReceiptUrlToPdf(details.receiptUrl);
+
+    return {
+      details,
+      attachment: {
+        filename: `receipt-${fileBase}.pdf`,
+        content: pdfBytes.toString("base64"),
+        mimeType: "application/pdf",
+      },
+    };
+  }
 
   return {
     details,
-    attachment: {
-      filename: `receipt-${fileBase}.${extension}`,
-      content: Buffer.from(bytes).toString("base64"),
-      mimeType,
-    },
+    attachment: null,
   };
+}
+
+export async function resolveStripeReceiptEmailAssets(
+  sessionId: string,
+  {
+    maxAttempts = 1,
+    retryDelayMs = 0,
+  }: ResolveStripeReceiptEmailAssetsOptions = {},
+): Promise<{
+  details: StripeReceiptDetails | null;
+  attachment: StripeReceiptAttachment | null;
+}> {
+  let lastError: unknown = null;
+  let lastDetails: StripeReceiptDetails | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const receipt = await resolveStripeReceiptAttachment(sessionId);
+
+      if (receipt.attachment) {
+        return receipt;
+      }
+
+      lastDetails = receipt.details;
+    } catch (error) {
+      lastError = error;
+    }
+
+    try {
+      const details = await resolveStripeReceiptDetails(sessionId);
+
+      if (details?.receiptUrl) {
+        lastDetails = details;
+      }
+    } catch (error) {
+      lastError = lastError ?? error;
+    }
+
+    if (attempt < maxAttempts && retryDelayMs > 0) {
+      await wait(retryDelayMs);
+    }
+  }
+
+  if (lastDetails) {
+    return {
+      details: lastDetails,
+      attachment: null,
+    };
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+
+  throw new Error("Stripe receipt could not be resolved for this payment.");
 }
