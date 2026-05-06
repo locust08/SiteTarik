@@ -25,10 +25,21 @@ export default function RootLayout({
 }>) {
   const analyticsConfig = getSiteTarikAnalyticsConfig();
   const shouldLoadDirectGa4 = analyticsConfig.shouldUseDirectGa4;
+  const analyticsRuntimeConfigJson = JSON.stringify({
+    gtmId: analyticsConfig.gtmId,
+    ga4MeasurementId: analyticsConfig.ga4MeasurementId,
+  });
 
   return (
     <html lang="en" className={`${bodyFont.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <Script
+          id="site-tarik-analytics-config"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.__SITE_TARIK_ANALYTICS__ = ${analyticsRuntimeConfigJson};`,
+          }}
+        />
         {analyticsConfig.hasGtm ? (
           <>
             <Script

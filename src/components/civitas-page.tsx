@@ -2,7 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import serviceShowcaseImage from "../../Image/Service Image.png";
 import educationShowcaseImage from "../../Image/Education Image.png";
 import homeLivingShowcaseImage from "../../Image/Home Living Image.png";
@@ -364,6 +364,7 @@ export function CivitasPage() {
   const [activeSection, setActiveSection] = useState("top");
   const [selectedPackage, setSelectedPackage] = useState<"core" | "blog">("core");
   const [processProgress, setProcessProgress] = useState(0);
+  const hasTrackedInitialPackageRef = useRef(false);
   const isBlogPackage = selectedPackage === "blog";
   const selectedPackageLabel = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageTitle = getSiteTarikPackageTitle(selectedPackage);
@@ -510,6 +511,13 @@ export function CivitasPage() {
 
   const handlePackageChange = (packagePlan: "core" | "blog") => {
     setSelectedPackage(packagePlan);
+  };
+
+  useEffect(() => {
+    if (!hasTrackedInitialPackageRef.current) {
+      hasTrackedInitialPackageRef.current = true;
+      return;
+    }
 
     const trackingSnapshot = readTrackingSnapshotFromBrowser();
 
@@ -519,10 +527,10 @@ export function CivitasPage() {
 
     dispatchSiteTarikAnalyticsEvent("site_tarik_package_selected", {
       ...buildBrowserTrackingMetadata(trackingSnapshot),
-      selected_package: packagePlan,
-      package_title: getSiteTarikPackageTitle(packagePlan),
+      selected_package: selectedPackage,
+      package_title: getSiteTarikPackageTitle(selectedPackage),
     });
-  };
+  }, [selectedPackage]);
 
   return (
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--foreground)]">

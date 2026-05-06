@@ -24,11 +24,11 @@ export function SiteTarikAnalytics() {
       return;
     }
 
-    const { snapshot, hasChanged } = captureTrackingSnapshotFromBrowser();
+    const { snapshot } = captureTrackingSnapshotFromBrowser();
 
     lastTrackedLocationRef.current = currentLocation;
 
-    if (!snapshot || !hasChanged) {
+    if (!snapshot) {
       return;
     }
 
