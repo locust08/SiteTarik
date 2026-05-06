@@ -541,19 +541,6 @@ export function ThankYouPage({
     : "";
 
   const handleWhatsAppClick = () => {
-    const trackingSnapshot = readTrackingSnapshotFromBrowser();
-
-    if (!trackingSnapshot) {
-      return;
-    }
-
-    dispatchSiteTarikAnalyticsEvent("site_tarik_whatsapp_click", {
-      ...buildBrowserTrackingMetadata(trackingSnapshot),
-      selected_package: receipt.selectedPackageValue,
-      package_title: receipt.selectedPackage,
-      checkout_session_id: stripeSessionId ?? "",
-      receipt_code: receipt.receiptCode ?? "",
-    });
   };
 
   const handleDownloadReceipt = async () => {
@@ -575,18 +562,6 @@ export function ThankYouPage({
         }
 
         setStripeReceiptUrl(payload.receiptUrl);
-        const trackingSnapshot = readTrackingSnapshotFromBrowser();
-
-        if (trackingSnapshot) {
-          dispatchSiteTarikAnalyticsEvent("site_tarik_receipt_download", {
-            ...buildBrowserTrackingMetadata(trackingSnapshot),
-            selected_package: receipt.selectedPackageValue,
-            package_title: receipt.selectedPackage,
-            checkout_session_id: stripeSessionId,
-            receipt_code: receipt.receiptCode ?? "",
-          });
-        }
-
         window.open(payload.receiptUrl, "_blank", "noopener,noreferrer");
         return;
       } catch {
@@ -594,18 +569,6 @@ export function ThankYouPage({
       } finally {
         setIsResolvingReceipt(false);
       }
-    }
-
-    const trackingSnapshot = readTrackingSnapshotFromBrowser();
-
-    if (trackingSnapshot) {
-      dispatchSiteTarikAnalyticsEvent("site_tarik_receipt_download", {
-        ...buildBrowserTrackingMetadata(trackingSnapshot),
-        selected_package: receipt.selectedPackageValue,
-        package_title: receipt.selectedPackage,
-        checkout_session_id: stripeSessionId,
-        receipt_code: receipt.receiptCode ?? "",
-      });
     }
 
     window.open(stripeReceiptUrl, "_blank", "noopener,noreferrer");

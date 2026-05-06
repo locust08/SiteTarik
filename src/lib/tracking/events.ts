@@ -6,8 +6,44 @@ import {
 } from "@/lib/tracking/core";
 import type { SiteTarikTrackingSnapshot } from "@/lib/tracking/types";
 
+const siteTarikTrackedEventNames = new Set([
+  "site_tarik_page_view",
+  "site_tarik_package_selected",
+  "site_tarik_checkout_started",
+  "site_tarik_checkout_success",
+  "site_tarik_blog_brief_submitted",
+]);
+
+function toGa4EventName(eventName: string) {
+  if (eventName === "site_tarik_page_view") {
+    return "page_view";
+  }
+
+  if (eventName === "site_tarik_package_selected") {
+    return "site_tarik_package_selected";
+  }
+
+  if (eventName === "site_tarik_checkout_started") {
+    return "begin_checkout";
+  }
+
+  if (eventName === "site_tarik_checkout_success") {
+    return "purchase";
+  }
+
+  if (eventName === "site_tarik_blog_brief_submitted") {
+    return "site_tarik_blog_brief_submitted";
+  }
+
+  return eventName;
+}
+
 export function pushSiteTarikEvent(eventName: string, payload: Record<string, unknown>) {
   if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!siteTarikTrackedEventNames.has(eventName)) {
     return;
   }
 
@@ -17,12 +53,7 @@ export function pushSiteTarikEvent(eventName: string, payload: Record<string, un
     gtag?: (...args: unknown[]) => void;
   };
   const analyticsPayload: Record<string, unknown> = { ...payload };
-  const directGa4EventName =
-    eventName === "site_tarik_page_view"
-      ? "page_view"
-      : eventName === "site_tarik_checkout_started"
-        ? "begin_checkout"
-        : eventName;
+  const directGa4EventName = toGa4EventName(eventName);
 
   delete analyticsPayload.event;
 

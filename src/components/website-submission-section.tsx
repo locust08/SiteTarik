@@ -679,16 +679,6 @@ export function WebsiteSubmissionSection({
         window.sessionStorage.setItem(thankYouStripeSessionKey, payload.id);
       }
 
-      if (trackingSnapshot) {
-        dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_redirected", {
-          ...buildBrowserTrackingMetadata(trackingSnapshot),
-          selected_package: selectedPackage,
-          package_title: packageDetails?.title ?? selectedPackage,
-          checkout_session_id: payload.id ?? "",
-          receipt_code: payload.receiptCode ?? "",
-        });
-      }
-
       window.location.assign(payload.url);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Checkout failed.";

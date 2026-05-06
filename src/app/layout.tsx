@@ -24,6 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const analyticsConfig = getSiteTarikAnalyticsConfig();
+  const shouldLoadDirectGa4 = analyticsConfig.shouldUseDirectGa4;
 
   return (
     <html lang="en" className={`${bodyFont.variable} h-full antialiased`}>
@@ -55,6 +56,28 @@ window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
                 tabIndex={-1}
               />
             </noscript>
+          </>
+        ) : null}
+        {shouldLoadDirectGa4 ? (
+          <>
+            <Script
+              id="site-tarik-ga4-loader"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.ga4MeasurementId}`}
+            />
+            <Script
+              id="site-tarik-ga4-bootstrap"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+window.gtag = window.gtag || gtag;
+gtag('js', new Date());
+gtag('config', '${analyticsConfig.ga4MeasurementId}', { send_page_view: false });
+`,
+              }}
+            />
           </>
         ) : null}
         {children}

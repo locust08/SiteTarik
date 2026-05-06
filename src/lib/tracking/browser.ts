@@ -6,20 +6,13 @@ import {
   serializeTrackingSnapshot,
   snapshotToTrackingMetadata,
 } from "@/lib/tracking/core";
+import { pushSiteTarikEvent } from "@/lib/tracking/events";
 import type { SiteTarikTrackingSnapshot } from "@/lib/tracking/types";
 import {
   siteTarikTrackingCookieMaxAgeSeconds,
   siteTarikTrackingCookieName,
   siteTarikTrackingStorageKey,
 } from "@/lib/site-tarik-analytics";
-
-type BrowserTrackingWindow = Window & {
-  dataLayer?: Array<Record<string, unknown>>;
-};
-
-function getBrowserWindow() {
-  return window as BrowserTrackingWindow;
-}
 
 function getStorageSnapshot() {
   try {
@@ -111,26 +104,12 @@ export function captureTrackingSnapshotFromBrowser() {
   };
 }
 
-function dispatchDataLayerEvent(eventName: string, payload: Record<string, unknown>) {
-  const browserWindow = getBrowserWindow();
-
-  browserWindow.dataLayer = browserWindow.dataLayer ?? [];
-  browserWindow.dataLayer.push({
-    event: eventName,
-    ...payload,
-  });
-}
-
 export function dispatchSiteTarikAnalyticsEvent(eventName: string, payload: Record<string, unknown>) {
   if (typeof window === "undefined") {
     return;
   }
 
-  const analyticsPayload: Record<string, unknown> = { ...payload };
-
-  delete analyticsPayload.event;
-
-  dispatchDataLayerEvent(eventName, analyticsPayload);
+  pushSiteTarikEvent(eventName, payload);
 }
 
 export function buildBrowserTrackingMetadata(snapshot: SiteTarikTrackingSnapshot) {
