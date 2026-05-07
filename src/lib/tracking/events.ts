@@ -20,7 +20,7 @@ function toGa4EventName(eventName: string) {
   }
 
   if (eventName === "site_tarik_package_selected") {
-    return "site_tarik_package_selected";
+    return "package_selected";
   }
 
   if (eventName === "site_tarik_checkout_started") {
@@ -32,7 +32,7 @@ function toGa4EventName(eventName: string) {
   }
 
   if (eventName === "site_tarik_blog_brief_submitted") {
-    return "site_tarik_blog_brief_submitted";
+    return "blog_brief_submitted";
   }
 
   return eventName;

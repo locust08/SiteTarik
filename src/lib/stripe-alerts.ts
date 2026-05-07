@@ -117,6 +117,10 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function formatEmailValueHtml(value: string) {
+  return escapeHtml(value).replace(/\r?\n/g, "<br>");
+}
+
 function getMetadataValue(metadata: MetadataRecord, field: StripeAlertField) {
   const candidates = metadataFallbacks[field] ?? [field];
 
@@ -144,6 +148,11 @@ type EmailSection = {
   }>;
 };
 
+type EmailSummaryCard = {
+  label: string;
+  value: string;
+};
+
 function buildEmailText(heading: string, sections: EmailSection[]) {
   const lines = [heading, ""];
 
@@ -160,33 +169,128 @@ function buildEmailText(heading: string, sections: EmailSection[]) {
   return lines.join("\n").trim();
 }
 
+function getSectionItemValue(
+  sections: EmailSection[],
+  sectionTitle: string,
+  itemLabel: string,
+) {
+  const section = sections.find((entry) => entry.title === sectionTitle);
+  const item = section?.items.find((entry) => entry.label === itemLabel);
+
+  return item?.value ?? "";
+}
+
+function buildEmailSummaryCards(sections: EmailSection[]) {
+  const cards = [
+    {
+      label: "Package",
+      value: getSectionItemValue(sections, "Order Info", "Package") || "Not available",
+    },
+    {
+      label: "Amount",
+      value: getSectionItemValue(sections, "Order Info", "Amount") || "Not available",
+    },
+    {
+      label: "Receipt Code",
+      value: getSectionItemValue(sections, "Order Info", "Receipt code") || "Not available",
+    },
+  ] satisfies EmailSummaryCard[];
+
+  return cards;
+}
+
 function buildEmailHtml(heading: string, sections: EmailSection[]) {
+  const summaryCards = buildEmailSummaryCards(sections);
+  const summaryCardsHtml = summaryCards
+    .map(
+      (card) => `
+        <td style="padding:0 8px 16px; vertical-align:top;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:0; background:#fff7f7; border:1px solid #f0d4d6; border-radius:16px;">
+            <tr>
+              <td style="padding:16px 18px;">
+                <div style="margin:0 0 8px; font-size:12px; line-height:16px; letter-spacing:0.08em; text-transform:uppercase; color:#8d5b60; font-weight:700;">
+                  ${escapeHtml(card.label)}
+                </div>
+                <div style="margin:0; font-size:22px; line-height:28px; color:#111827; font-weight:800;">
+                  ${escapeHtml(card.value)}
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>`,
+    )
+    .join("");
   const sectionsHtml = sections
     .map(
       (section) => `
-        <section style="margin:0 0 18px;">
-          <h2 style="margin:0 0 8px;font-size:16px;">${escapeHtml(section.title)}</h2>
-          ${section.items
-            .map(
-              (item) => `
-                <p style="margin:0 0 6px;">
-                  <strong>${escapeHtml(item.label)}:</strong>
-                  ${
-                    item.emphasize
-                      ? `<strong>${escapeHtml(item.value)}</strong>`
-                      : escapeHtml(item.value)
-                  }
-                </p>`,
-            )
-            .join("")}
-        </section>`,
+        <tr>
+          <td style="padding:0 0 18px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:0; background:#ffffff; border:1px solid #e5e7eb; border-radius:18px; overflow:hidden;">
+              <tr>
+                <td style="padding:18px 20px 14px; border-bottom:1px solid #eef1f4;">
+                  <div style="margin:0; font-size:16px; line-height:20px; color:#111827; font-weight:800; letter-spacing:0.02em;">
+                    ${escapeHtml(section.title)}
+                  </div>
+                </td>
+              </tr>
+              ${section.items
+                .map(
+                  (item, index) => `
+                    <tr>
+                      <td align="left" width="190" style="padding:14px 22px 14px 20px; width:190px; font-size:13px; line-height:18px; color:#7b8794; font-weight:700; text-align:left !important; vertical-align:top; border-bottom:${index === section.items.length - 1 ? "0" : "1px solid #eef1f4"};">
+                        ${escapeHtml(item.label)}
+                      </td>
+                      <td align="left" style="padding:14px 20px 14px 0; font-size:14px; line-height:21px; color:#111827; font-weight:${item.emphasize ? "800" : "500"}; text-align:left !important; vertical-align:top; word-break:normal; overflow-wrap:break-word; border-bottom:${index === section.items.length - 1 ? "0" : "1px solid #eef1f4"};">
+                        <div align="left" style="margin:0; padding:0; text-align:left !important; word-break:normal; overflow-wrap:break-word;">${formatEmailValueHtml(item.value)}</div>
+                      </td>
+                    </tr>`,
+                )
+                .join("")}
+            </table>
+          </td>
+        </tr>`,
     )
     .join("");
 
-  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;">
-    <p style="margin:0 0 16px;font-size:16px;"><strong>${escapeHtml(heading)}</strong></p>
-    ${sectionsHtml}
-  </div>`;
+  return `
+    <div style="margin:0; padding:24px 12px; background:#f4f5f7;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; width:100%; margin:0 auto; max-width:760px; font-family:Manrope,Arial,Helvetica,sans-serif;">
+        <tr>
+          <td style="padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:0; background:#ffffff; border-radius:24px; overflow:hidden;">
+              <tr>
+                <td style="padding:28px 32px; background:#ee2028;">
+                  <div style="margin:0 0 14px; font-size:12px; line-height:16px; color:#ffe8eb; text-transform:uppercase; letter-spacing:0.12em; font-weight:700; font-family:Manrope,Arial,Helvetica,sans-serif;">
+                    SiteTarik Order Delivery Summary
+                  </div>
+                  <div style="margin:0 0 12px; font-size:34px; line-height:40px; color:#ffffff; font-weight:800; font-family:Manrope,Arial,Helvetica,sans-serif;">
+                    ${escapeHtml(heading)}
+                  </div>
+                  <div style="display:inline-block; padding:8px 14px; border:1px solid rgba(255,255,255,0.32); border-radius:999px; font-size:13px; line-height:18px; color:#fff3f4; font-weight:700; font-family:Manrope,Arial,Helvetica,sans-serif;">
+                    Internal notification
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td align="left" style="padding:28px 24px 10px; text-align:left;">
+                  <div align="left" style="margin:0 0 22px; font-size:16px; line-height:26px; color:#344054; text-align:left !important;">
+                    The order is ready for review. All delivery details are preserved below for fast action and handoff.
+                  </div>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                    <tr>
+                      ${summaryCardsHtml}
+                    </tr>
+                  </table>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                    ${sectionsHtml}
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>`;
 }
 
 function getBaseEmailSections(
@@ -204,12 +308,10 @@ function getBaseEmailSections(
         {
           label: "WhatsApp for delivery",
           value: whatsappNumber,
-          emphasize: true,
         },
         {
           label: "Website URL",
           value: record.websiteUrl || "Not available",
-          emphasize: true,
         },
         {
           label: "Business name",
@@ -337,7 +439,6 @@ export function buildBlogAlertEmail(
         {
           label: "Business description",
           value: record.briefBusinessDescription || "Not available",
-          emphasize: true,
         },
         {
           label: "Products and services",
@@ -351,7 +452,6 @@ export function buildBlogAlertEmail(
         {
           label: "Target keywords",
           value: record.targetKeywords || "Not available",
-          emphasize: true,
         },
         {
           label: "Ideal customers",

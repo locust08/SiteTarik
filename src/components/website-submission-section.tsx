@@ -397,7 +397,10 @@ export function WebsiteSubmissionSection({
   onPackageChange,
 }: {
   selectedPackage: PackagePlan;
-  onPackageChange: (packagePlan: PackagePlan) => void;
+  onPackageChange: (
+    packagePlan: PackagePlan,
+    options?: { trackSelection?: boolean },
+  ) => void;
 }) {
   const [websiteForm, setWebsiteForm] = useState<WebsiteSubmissionForm>(initialWebsiteSubmissionForm);
   const [whatsappConsent, setWhatsappConsent] = useState(false);
@@ -895,7 +898,11 @@ export function WebsiteSubmissionSection({
                       key={plan.value}
                       type="button"
                       disabled={!whatsappConsent}
-                      onClick={() => onPackageChange(plan.value)}
+                      onClick={() =>
+                        onPackageChange(plan.value, {
+                          trackSelection: true,
+                        })
+                      }
                       aria-pressed={isSelected}
                       className={`rounded-[1rem] border p-4 text-left transition duration-200 ${
                         !whatsappConsent

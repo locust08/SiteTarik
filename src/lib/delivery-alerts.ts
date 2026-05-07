@@ -53,8 +53,9 @@ async function sendImmediateAlert(
 
   try {
     const receipt = await resolveStripeReceiptEmailAssets(record.sessionId, {
-      maxAttempts: alertType === "core_paid" ? 6 : 3,
-      retryDelayMs: alertType === "core_paid" ? 3000 : 1500,
+      maxAttempts: alertType === "core_paid" ? 4 : 1,
+      retryDelayMs: alertType === "core_paid" ? 2000 : 0,
+      renderHtmlToPdf: alertType === "core_paid",
     });
     receiptUrl = receipt.details?.receiptUrl ?? null;
     receiptAttachment = receipt.attachment

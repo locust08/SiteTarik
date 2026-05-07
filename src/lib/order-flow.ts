@@ -36,6 +36,12 @@ export function getThankYouReceiptUrlKey(sessionId?: string | null) {
   return sessionId ? `siteTarikReceiptUrl:${sessionId}` : "siteTarikReceiptUrl";
 }
 
+export function getThankYouPurchaseTrackedKey(sessionId?: string | null) {
+  return sessionId
+    ? `siteTarikPurchaseTracked:${sessionId}`
+    : "siteTarikPurchaseTracked";
+}
+
 export function parseSiteTarikOrderCompletion(
   rawValue: string | null | undefined,
 ) {

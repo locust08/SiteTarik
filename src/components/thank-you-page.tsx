@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import {
   formatSiteTarikDateTime,
+  getThankYouPurchaseTrackedKey,
   orderCompleteStorageKey,
   thankYouStorageKey,
   thankYouStripeSessionKey,
@@ -235,6 +236,39 @@ function buildReceiptFromVerification(
   } satisfies ReceiptData;
 }
 
+function buildThankYouTrackingPayload(
+  stripeSessionId: string,
+  receipt: ReceiptData,
+  trackingSnapshot: ReturnType<typeof readTrackingSnapshotFromBrowser>,
+) {
+  const fallbackPageUrl =
+    typeof window !== "undefined" ? window.location.href : "";
+  const fallbackPagePath =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+      : "";
+  const fallbackReferrer = typeof document !== "undefined" ? document.referrer : "";
+
+  return {
+    ...(trackingSnapshot ? buildBrowserTrackingMetadata(trackingSnapshot) : {}),
+    page_url: trackingSnapshot?.page_url ?? fallbackPageUrl,
+    page_path: trackingSnapshot?.page_path ?? fallbackPagePath,
+    page_location: trackingSnapshot?.page_url ?? fallbackPageUrl,
+    page_referrer: trackingSnapshot?.referrer ?? fallbackReferrer,
+    referrer: trackingSnapshot?.referrer ?? fallbackReferrer,
+    landing_page_url: trackingSnapshot?.landing_page_url ?? fallbackPageUrl,
+    landing_page_path: trackingSnapshot?.landing_page_path ?? fallbackPagePath,
+    page_history: trackingSnapshot?.page_history
+      ? JSON.stringify(trackingSnapshot.page_history)
+      : JSON.stringify([fallbackPageUrl].filter(Boolean)),
+    selected_package: receipt.selectedPackageValue,
+    package_title: receipt.selectedPackage,
+    transaction_id: stripeSessionId,
+    checkout_session_id: stripeSessionId,
+    receipt_code: receipt.receiptCode ?? "",
+  };
+}
+
 function SummaryRow({
   label,
   value,
@@ -287,6 +321,7 @@ export function ThankYouPage({
   const [phase, setPhase] = useState<"loading" | "confirming" | "ready">(
     isActiveCheckout ? "loading" : "ready",
   );
+  const [isPaidVerified, setIsPaidVerified] = useState(false);
   const [isBlogReviewOpen, setIsBlogReviewOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [stripeReceiptUrl, setStripeReceiptUrl] = useState<string | null>(null);
@@ -373,12 +408,15 @@ export function ThankYouPage({
 
   useEffect(() => {
     if (!stripeSessionId) {
+      setIsPaidVerified(false);
       return;
     }
 
     const controller = new AbortController();
 
     const syncReceiptFromStripe = async () => {
+      setIsPaidVerified(false);
+
       try {
         const response = await fetch(
           `/api/stripe/verify?session_id=${encodeURIComponent(stripeSessionId)}`,
@@ -390,6 +428,8 @@ export function ThankYouPage({
         }
 
         const payload = (await response.json()) as StripeVerifyPayload;
+
+        setIsPaidVerified(payload.isPaid === true);
 
         if (payload.isPaid !== true) {
           return;
@@ -405,6 +445,8 @@ export function ThankYouPage({
         if ((error as { name?: string }).name === "AbortError") {
           return;
         }
+
+        setIsPaidVerified(false);
       }
     };
 
@@ -487,7 +529,7 @@ export function ThankYouPage({
   }, [phase, stripeReceiptUrl, stripeSessionId]);
 
   useEffect(() => {
-    if (phase !== "ready" || !stripeSessionId) {
+    if (phase !== "ready" || !stripeSessionId || !isPaidVerified) {
       return;
     }
 
@@ -497,10 +539,10 @@ export function ThankYouPage({
     });
 
     window.localStorage.setItem(orderCompleteStorageKey, orderCompleteValue);
-  }, [phase, stripeSessionId]);
+  }, [isPaidVerified, phase, stripeSessionId]);
 
   useEffect(() => {
-    if (phase !== "ready" || !stripeSessionId) {
+    if (phase !== "ready" || !stripeSessionId || !isPaidVerified) {
       return;
     }
 
@@ -508,25 +550,40 @@ export function ThankYouPage({
       return;
     }
 
-    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+    const purchaseTrackedKey = getThankYouPurchaseTrackedKey(stripeSessionId);
 
-    if (!trackingSnapshot) {
-      return;
+    try {
+      if (window.localStorage.getItem(purchaseTrackedKey)) {
+        checkoutSuccessTrackedSessionRef.current = stripeSessionId;
+        return;
+      }
+    } catch {
+      // Ignore storage read failures and fall through to a best-effort dispatch.
     }
 
+    const trackingSnapshot = readTrackingSnapshotFromBrowser();
+
     dispatchSiteTarikAnalyticsEvent("site_tarik_checkout_success", {
-      ...buildBrowserTrackingMetadata(trackingSnapshot),
-      selected_package: receipt.selectedPackageValue,
-      package_title: receipt.selectedPackage,
-      checkout_session_id: stripeSessionId,
-      receipt_code: receipt.receiptCode ?? "",
+      ...buildThankYouTrackingPayload(stripeSessionId, receipt, trackingSnapshot),
     });
+
+    try {
+      window.localStorage.setItem(
+        purchaseTrackedKey,
+        JSON.stringify({
+          sessionId: stripeSessionId,
+          trackedAt: new Date().toISOString(),
+        }),
+      );
+    } catch {
+      // Ignore storage write failures and still avoid duplicate firing in-memory.
+    }
+
     checkoutSuccessTrackedSessionRef.current = stripeSessionId;
   }, [
+    isPaidVerified,
     phase,
-    receipt.receiptCode,
-    receipt.selectedPackage,
-    receipt.selectedPackageValue,
+    receipt,
     stripeSessionId,
   ]);
 

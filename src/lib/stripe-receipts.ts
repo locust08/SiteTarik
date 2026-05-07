@@ -17,6 +17,7 @@ export type StripeReceiptAttachment = {
 type ResolveStripeReceiptEmailAssetsOptions = {
   maxAttempts?: number;
   retryDelayMs?: number;
+  renderHtmlToPdf?: boolean;
 };
 
 function getReceiptUrlFromCharge(
@@ -256,7 +257,10 @@ export async function resolveStripeSessionIdByEmail(
   return matchingSession?.id ?? null;
 }
 
-export async function resolveStripeReceiptAttachment(sessionId: string): Promise<{
+export async function resolveStripeReceiptAttachment(
+  sessionId: string,
+  { renderHtmlToPdf = true }: { renderHtmlToPdf?: boolean } = {},
+): Promise<{
   details: StripeReceiptDetails;
   attachment: StripeReceiptAttachment | null;
 }> {
@@ -288,7 +292,7 @@ export async function resolveStripeReceiptAttachment(sessionId: string): Promise
     };
   }
 
-  if (isHtmlReceipt(details.receiptUrl, contentType)) {
+  if (renderHtmlToPdf && isHtmlReceipt(details.receiptUrl, contentType)) {
     const pdfBytes = await renderReceiptUrlToPdf(details.receiptUrl);
 
     return {
@@ -312,6 +316,7 @@ export async function resolveStripeReceiptEmailAssets(
   {
     maxAttempts = 1,
     retryDelayMs = 0,
+    renderHtmlToPdf = true,
   }: ResolveStripeReceiptEmailAssetsOptions = {},
 ): Promise<{
   details: StripeReceiptDetails | null;
@@ -322,7 +327,9 @@ export async function resolveStripeReceiptEmailAssets(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const receipt = await resolveStripeReceiptAttachment(sessionId);
+      const receipt = await resolveStripeReceiptAttachment(sessionId, {
+        renderHtmlToPdf,
+      });
 
       if (receipt.attachment) {
         return receipt;

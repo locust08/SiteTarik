@@ -2,7 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import serviceShowcaseImage from "../../Image/Service Image.png";
 import educationShowcaseImage from "../../Image/Education Image.png";
 import homeLivingShowcaseImage from "../../Image/Home Living Image.png";
@@ -364,7 +364,6 @@ export function CivitasPage() {
   const [activeSection, setActiveSection] = useState("top");
   const [selectedPackage, setSelectedPackage] = useState<"core" | "blog">("core");
   const [processProgress, setProcessProgress] = useState(0);
-  const hasTrackedInitialPackageRef = useRef(false);
   const isBlogPackage = selectedPackage === "blog";
   const selectedPackageLabel = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageTitle = getSiteTarikPackageTitle(selectedPackage);
@@ -509,28 +508,27 @@ export function CivitasPage() {
     };
   }, []);
 
-  const handlePackageChange = (packagePlan: "core" | "blog") => {
-    setSelectedPackage(packagePlan);
-  };
-
-  useEffect(() => {
-    if (!hasTrackedInitialPackageRef.current) {
-      hasTrackedInitialPackageRef.current = true;
-      return;
-    }
-
+  const trackPackageSelection = (packagePlan: "core" | "blog") => {
     const trackingSnapshot = readTrackingSnapshotFromBrowser();
-
-    if (!trackingSnapshot) {
-      return;
-    }
+    const packageTitle = getSiteTarikPackageTitle(packagePlan);
 
     dispatchSiteTarikAnalyticsEvent("site_tarik_package_selected", {
-      ...buildBrowserTrackingMetadata(trackingSnapshot),
-      selected_package: selectedPackage,
-      package_title: getSiteTarikPackageTitle(selectedPackage),
+      ...(trackingSnapshot ? buildBrowserTrackingMetadata(trackingSnapshot) : {}),
+      selected_package: packagePlan,
+      package_title: packageTitle,
     });
-  }, [selectedPackage]);
+  };
+
+  const handlePackageChange = (
+    packagePlan: "core" | "blog",
+    options?: { trackSelection?: boolean },
+  ) => {
+    setSelectedPackage(packagePlan);
+
+    if (options?.trackSelection) {
+      trackPackageSelection(packagePlan);
+    }
+  };
 
   return (
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--foreground)]">
@@ -799,108 +797,110 @@ export function CivitasPage() {
               </h2>
             </Reveal>
 
-            <div className="mt-14 divide-y divide-[var(--border)] border-y border-[var(--border)]">
+            <div className="mt-14 border-t border-[var(--border)]">
               {services.map((service, index) => {
                 const isOpen = openService === index;
                 const panelId = `service-panel-${index}`;
                 const buttonId = `service-button-${index}`;
 
                 return (
-                  <Reveal
+                  <div
                     key={service.title}
-                    delay={80 + index * 70}
+                    className="overflow-hidden border-b border-[var(--border)]"
                   >
-                    <article
-                      className={`group transition-colors duration-200 ${
-                        isOpen
-                          ? "bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
-                          : "bg-white hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
-                      } md:grid md:grid-cols-[80px_0.95fr_1.05fr] md:items-start md:gap-5 md:py-8 md:hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]`}
-                    >
-                      <div className="md:hidden">
-                        <button
-                          type="button"
-                          id={buttonId}
-                          aria-controls={panelId}
-                          aria-expanded={isOpen}
-                          onClick={() =>
-                            setOpenService((current) =>
-                              current === index ? null : index,
-                            )
-                          }
-                          className="flex w-full items-center justify-between gap-4 py-4.5 text-left"
-                        >
-                          <div className="min-w-0">
-                            <span className="block text-sm font-medium tracking-[0.16em] text-[#5b6f7a]">
-                              {service.index}
-                            </span>
-                            <h3
-                              className="mt-2 font-[family-name:var(--font-heading)] text-[1.55rem] leading-[1.05] tracking-[-0.04em] transition-colors duration-200 sm:text-[1.75rem] text-[var(--foreground)]"
+                    <Reveal delay={80 + index * 70}>
+                      <article
+                        className={`group transition-colors duration-200 ${
+                          isOpen
+                            ? "bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                            : "bg-white hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]"
+                        } md:grid md:grid-cols-[80px_0.95fr_1.05fr] md:items-start md:gap-5 md:py-8 md:hover:bg-[linear-gradient(90deg,rgba(255,246,247,0)_0%,rgba(255,246,247,0.92)_8%,rgba(255,246,247,0.92)_92%,rgba(255,246,247,0)_100%)]`}
+                      >
+                        <div className="md:hidden">
+                          <button
+                            type="button"
+                            id={buttonId}
+                            aria-controls={panelId}
+                            aria-expanded={isOpen}
+                            onClick={() =>
+                              setOpenService((current) =>
+                                current === index ? null : index,
+                              )
+                            }
+                            className="flex w-full items-center justify-between gap-4 py-4.5 text-left"
+                          >
+                            <div className="min-w-0">
+                              <span className="block text-sm font-medium tracking-[0.16em] text-[#5b6f7a]">
+                                {service.index}
+                              </span>
+                              <h3
+                                className="mt-2 font-[family-name:var(--font-heading)] text-[1.55rem] leading-[1.05] tracking-[-0.04em] transition-colors duration-200 sm:text-[1.75rem] text-[var(--foreground)]"
+                              >
+                                {service.title}
+                              </h3>
+                            </div>
+
+                            <span
+                              className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                                isOpen
+                                  ? "border-[rgba(255,178,188,0.95)] bg-[rgba(255,246,247,0.96)] text-[rgba(238,32,40,0.82)]"
+                                  : "border-[rgba(255,178,188,0.6)] bg-[rgba(255,246,247,0.72)] text-[rgba(17,17,17,0.72)]"
+                              }`}
+                              aria-hidden="true"
                             >
+                              <ChevronDown
+                                className={`h-5 w-5 transition-transform duration-300 ${
+                                  isOpen ? "rotate-180" : "rotate-0"
+                                }`}
+                              />
+                            </span>
+                          </button>
+
+                          <div
+                            id={panelId}
+                            role="region"
+                            aria-labelledby={buttonId}
+                            className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                              isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <p className="pb-4 text-base leading-8 text-[var(--muted)]">
+                                {service.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="hidden pt-1 text-xl font-medium tracking-[-0.04em] text-[#5b6f7a] md:block">
+                          {service.index}
+                        </span>
+                        <div className="hidden items-start justify-between gap-3 md:flex">
+                          <div className="min-w-0">
+                            <h3 className="font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] group-hover:text-[var(--foreground)]">
                               {service.title}
                             </h3>
                           </div>
 
-                          <span
-                            className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
-                              isOpen
-                                ? "border-[rgba(255,178,188,0.95)] bg-[rgba(255,246,247,0.96)] text-[rgba(238,32,40,0.82)]"
-                                : "border-[rgba(255,178,188,0.6)] bg-[rgba(255,246,247,0.72)] text-[rgba(17,17,17,0.72)]"
-                            }`}
-                            aria-hidden="true"
-                          >
-                            <ChevronDown
-                              className={`h-5 w-5 transition-transform duration-300 ${
-                                isOpen ? "rotate-180" : "rotate-0"
-                              }`}
+                          <div className="hidden md:flex md:h-11 md:w-11 md:items-center md:justify-center md:self-start md:rounded-full md:border md:border-[var(--border)] md:text-[var(--foreground)]/60">
+                            <ArrowRight
+                              className="h-4 w-4 transform-gpu translate-x-0 text-[var(--foreground)]/70 transition-[color,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:translate-x-[1px] group-hover:text-[#ee2028]"
                             />
-                          </span>
-                        </button>
-
-                        <div
-                          id={panelId}
-                          role="region"
-                          aria-labelledby={buttonId}
-                          className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out ${
-                            isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                          }`}
-                        >
-                          <div className="overflow-hidden">
-                            <p className="pb-4 text-base leading-8 text-[var(--muted)]">
-                              {service.description}
-                            </p>
                           </div>
                         </div>
-                      </div>
 
-                      <span className="hidden pt-1 text-xl font-medium tracking-[-0.04em] text-[#5b6f7a] md:block">
-                        {service.index}
-                      </span>
-                      <div className="hidden items-start justify-between gap-3 md:flex">
-                        <div className="min-w-0">
-                          <h3 className="font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] group-hover:text-[var(--foreground)]">
-                            {service.title}
-                          </h3>
-                        </div>
-
-                        <div className="hidden md:flex md:h-11 md:w-11 md:items-center md:justify-center md:self-start md:rounded-full md:border md:border-[var(--border)] md:text-[var(--foreground)]/60">
-                          <ArrowRight
-                            className="h-4 w-4 transform-gpu translate-x-0 text-[var(--foreground)]/70 transition-[color,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:translate-x-[1px] group-hover:text-[#ee2028]"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="hidden md:block">
-                        <div className="grid grid-rows-[0fr] transition-[grid-template-rows,opacity] duration-300 ease-out opacity-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100">
-                          <div className="overflow-hidden">
-                            <p className="pt-0.5 text-base leading-8 text-[var(--muted)]">
-                              {service.description}
-                            </p>
+                        <div className="hidden md:block">
+                          <div className="grid grid-rows-[0fr] transition-[grid-template-rows,opacity] duration-300 ease-out opacity-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100">
+                            <div className="overflow-hidden">
+                              <p className="pt-0.5 text-base leading-8 text-[var(--muted)]">
+                                {service.description}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </article>
-                  </Reveal>
+                      </article>
+                    </Reveal>
+                  </div>
                 );
               })}
             </div>
@@ -1059,7 +1059,11 @@ export function CivitasPage() {
                 <div className="flex flex-col gap-6 border-b border-[var(--border)] px-6 py-6 sm:px-8 lg:flex-row lg:items-start lg:justify-between">
                   <button
                     type="button"
-                    onClick={() => handlePackageChange(isBlogPackage ? "core" : "blog")}
+                    onClick={() =>
+                      handlePackageChange(isBlogPackage ? "core" : "blog", {
+                        trackSelection: true,
+                      })
+                    }
                     className="max-w-[34rem] text-left"
                   >
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
@@ -1112,7 +1116,11 @@ export function CivitasPage() {
                           type="button"
                           role="switch"
                           aria-checked={isBlogPackage}
-                          onClick={() => handlePackageChange(isBlogPackage ? "core" : "blog")}
+                          onClick={() =>
+                            handlePackageChange(isBlogPackage ? "core" : "blog", {
+                              trackSelection: true,
+                            })
+                          }
                           className={`relative inline-flex h-9 w-16 items-center rounded-full border transition ${
                             isBlogPackage
                               ? "border-[#ee2028] bg-[#ee2028] shadow-[0_0_0_3px_rgba(238,32,40,0.12)]"

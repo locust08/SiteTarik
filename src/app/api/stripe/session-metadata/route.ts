@@ -6,7 +6,6 @@ import {
   stripeApiRequest,
 } from "@/lib/stripe-rest";
 import { replaceStripeMetadata, stripeManagedMetadataKeys } from "@/lib/stripe-metadata";
-import { hasCompletedBlogBrief } from "@/lib/stripe-alerts";
 import {
   getRequestDebugContext,
   logServerError,
@@ -211,7 +210,6 @@ export async function POST(request: Request) {
     const sessionMetadata = session.metadata ?? {};
     const orderFields = buildOrderMetadata(payload, sessionMetadata);
     const selectedPackage = orderFields.selectedPackage;
-    const alreadyHadCompletedBlogBrief = hasCompletedBlogBrief(sessionMetadata);
 
     if (selectedPackage !== "core" && selectedPackage !== "blog") {
       return Response.json({ error: "Please choose a valid package." }, { status: 400 });
@@ -321,10 +319,10 @@ export async function POST(request: Request) {
       hasBlogBriefFields: isBlogPackage,
     });
 
-    if (isBlogPackage && !alreadyHadCompletedBlogBrief) {
+    if (isBlogPackage) {
       try {
         await sendImmediateBlogBriefAlert(session, {
-          idempotencyKey: `blog-brief:${sessionId}`,
+          idempotencyKey: `blog-brief:${sessionId}:${orderFields.receiptCode || "receipt"}`,
           metadata: metadataToSave,
         });
       } catch (error) {
