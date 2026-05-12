@@ -259,7 +259,7 @@ function buildEmailHtml(heading: string, sections: EmailSection[]) {
           <td style="padding:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:0; background:#ffffff; border-radius:24px; overflow:hidden;">
               <tr>
-                <td style="padding:28px 32px; background:#ee2028;">
+                <td style="padding:28px 32px; background:#ee2028; background-image:radial-gradient(circle at 12% 18%, rgba(238, 32, 40, 0.48), transparent 28%), radial-gradient(circle at 86% 10%, rgba(238, 32, 40, 0.26), transparent 26%), radial-gradient(circle at 50% 100%, rgba(238, 32, 40, 0.22), transparent 38%), linear-gradient(135deg, #521015 0%, #3b0d12 32%, #221012 65%, #181113 100%);">
                   <div style="margin:0 0 14px; font-size:12px; line-height:16px; color:#ffe8eb; text-transform:uppercase; letter-spacing:0.12em; font-weight:700; font-family:Manrope,Arial,Helvetica,sans-serif;">
                     SiteTarik Order Delivery Summary
                   </div>

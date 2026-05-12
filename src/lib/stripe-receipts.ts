@@ -127,13 +127,49 @@ async function renderReceiptUrlToPdf(receiptUrl: string) {
 export async function resolveStripeReceiptDetails(sessionId: string): Promise<StripeReceiptDetails | null> {
   const session = await stripeApiRequest<{
     mode?: string;
+    invoice?: {
+      created?: number;
+      hosted_invoice_url?: string | null;
+      invoice_pdf?: string | null;
+      receipt_number?: string | null;
+      number?: string | null;
+      id?: string;
+    } | string | null;
     payment_intent?: string | { id?: string };
     subscription?: string | { id?: string };
     metadata?: Record<string, string | undefined>;
-  }>(`/checkout/sessions/${encodeURIComponent(sessionId)}`);
+  }>(`/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=invoice`);
   const metadataReceiptCode = session.metadata?.receiptCode ?? null;
 
   if (session.mode === "payment") {
+    const sessionInvoice = session.invoice;
+
+    if (sessionInvoice && typeof sessionInvoice !== "string") {
+      const paidAtIso = getTimestampIso(sessionInvoice.created ?? null);
+      const receiptCode = getStripeReceiptCode(
+        metadataReceiptCode,
+        sessionInvoice.receipt_number,
+        sessionInvoice.number ?? sessionInvoice.id,
+        sessionId,
+      );
+
+      if (sessionInvoice.invoice_pdf) {
+        return {
+          receiptUrl: sessionInvoice.invoice_pdf,
+          paidAtIso,
+          receiptCode,
+        };
+      }
+
+      if (sessionInvoice.hosted_invoice_url) {
+        return {
+          receiptUrl: sessionInvoice.hosted_invoice_url,
+          paidAtIso,
+          receiptCode,
+        };
+      }
+    }
+
     const paymentIntentId =
       typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
 

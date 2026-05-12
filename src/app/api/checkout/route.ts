@@ -223,6 +223,7 @@ export async function POST(request: Request) {
     appendStripeMetadata(formData, "metadata", orderMetadata);
     if (packageDetails.mode === "payment") {
       formData.set("customer_creation", "always");
+      formData.set("invoice_creation[enabled]", "true");
       formData.set("payment_intent_data[receipt_email]", resolvedEmail);
       appendStripeMetadata(formData, "payment_intent_data[metadata]", orderMetadata);
     } else {

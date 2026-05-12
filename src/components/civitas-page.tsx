@@ -217,32 +217,24 @@ const showcasePanels: ShowcasePanel[] = [
 
 const faqItems: FaqItem[] = [
   {
-    question: "What do I need to prepare?",
-    answer: <>Your website link and basic business details.</>,
-  },
-  {
-    question: "Is this suitable for my website?",
-    answer: <>Suitable for most existing business websites, especially WordPress, Drupal, and similar platforms.</>,
+    question: "Is SiteTarik suitable for my website?",
+    answer: <>Yes. SiteTarik is built for existing business websites, especially WordPress, Drupal, Joomla, and similar CMS platforms.</>,
   },
   {
     question: "What is included in RM100/year?",
-    answer: <>RM100/year includes Basic SEO, hosting, and final website link sent through WhatsApp.</>,
+    answer: <>RM100/year includes Basic SEO, GTM and GA4 ads tracking, hosting, and WhatsApp delivery.</>,
+  },
+  {
+    question: "Are GTM and GA4 included?",
+    answer: <>Yes. Both plans include Google Tag Manager and GA4 so your website is built ready for campaigns, measurement, and growth.</>,
   },
   {
     question: "What is included in SEO Enhancement?",
-    answer: <>SEO Enhancement is RM220 total and includes 12 SEO-friendly blog pages, with the brief completed after payment.</>,
-  },
-  {
-    question: "Will SEO be included?",
-    answer: <>Basic SEO setup such as meta title and description is included.</>,
-  },
-  {
-    question: "How will I receive the final output?",
-    answer: <>You will receive a link via WhatsApp after completion.</>,
+    answer: <>SEO Enhancement is RM220 total and adds 12 SEO-friendly blog pages to a refreshed, ad-ready website.</>,
   },
   {
     question: "Do I need technical skills?",
-    answer: <>No. The process is designed to be simple and straightforward.</>,
+    answer: <>No. SiteTarik handles the setup cleanly, including GTM and GA4, reducing CMS plugin risk and keeping delivery simple through WhatsApp.</>,
   },
 ];
 
@@ -255,6 +247,8 @@ const heroTrustItems = [
 const pricingCoreIncludes = [
   "Website reborn",
   "Basic SEO setup",
+  "GTM and GA4 setup",
+  "Ads tracking ready",
   "Hosted output",
   "WhatsApp delivery",
 ];
@@ -264,6 +258,8 @@ const pricingBlogIncludes = [
   "Stronger structure and layout",
   "Clear blog content structure",
   "Basic SEO setup",
+  "GTM and GA4 setup",
+  "Ads tracking ready",
   "Hosted output",
   "WhatsApp delivery",
 ];
@@ -368,8 +364,8 @@ export function CivitasPage() {
   const selectedPackageLabel = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageTitle = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageDescription = isBlogPackage
-    ? "SEO Enhancement includes the Core Reborn handoff plus 12 SEO-friendly blog pages."
-    : "Core Reborn gives you a clean website refresh with basic SEO, hosting, and WhatsApp delivery.";
+    ? "SEO Enhancement adds 12 SEO-friendly blog pages to a refreshed, ad-ready website with GTM and GA4."
+    : "Core Reborn gives you a clean website refresh with basic SEO, GTM, GA4, hosting, and WhatsApp delivery.";
   const selectedPackageIncludes = isBlogPackage
     ? pricingBlogIncludes
     : pricingCoreIncludes;

@@ -2,6 +2,7 @@ import {
   getStripeEnvironmentSnapshot,
 } from "@/lib/stripe-rest";
 import {
+  resolveStripeReceiptAttachment,
   resolveStripeReceiptDetails,
   resolveStripeSessionIdByEmail,
 } from "@/lib/stripe-receipts";
@@ -30,8 +31,30 @@ export async function GET(request: Request) {
   const email = getStringParam(url.searchParams.get("email") ?? undefined);
   const selectedPackage = getStringParam(url.searchParams.get("selected_package") ?? undefined);
   const redirect = url.searchParams.get("redirect") === "1";
+  const download = url.searchParams.get("download") === "1";
 
   try {
+    if (download && sessionId) {
+      const receipt = await resolveStripeReceiptAttachment(sessionId, {
+        renderHtmlToPdf: false,
+      });
+
+      if (receipt.attachment) {
+        return new Response(Buffer.from(receipt.attachment.content, "base64"), {
+          headers: {
+            "content-type": receipt.attachment.mimeType ?? "application/pdf",
+            "content-disposition": `attachment; filename="${receipt.attachment.filename}"`,
+            "cache-control": "private, no-store",
+          },
+        });
+      }
+
+      return new Response("A downloadable Stripe PDF is not available for this payment.", {
+        status: 409,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    }
+
     const receiptDetails = sessionId
       ? await resolveStripeReceiptDetails(sessionId)
       : email

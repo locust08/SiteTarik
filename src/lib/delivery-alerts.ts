@@ -9,6 +9,7 @@ import {
 } from "@/lib/stripe-alerts";
 import { resolveStripeReceiptEmailAssets } from "@/lib/stripe-receipts";
 import { logServerEvent } from "@/lib/server-debug";
+import { getRequiredSiteUrl } from "@/lib/env";
 
 type StripeAlertSessionInput = Parameters<typeof buildStripeAlertRecord>[0];
 
@@ -19,6 +20,17 @@ type DeliveryAlertOptions = {
 
 function sanitizeFileSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+function getReceiptDownloadUrl(sessionId: string) {
+  try {
+    const url = new URL("/api/stripe/receipt", getRequiredSiteUrl());
+    url.searchParams.set("session_id", sessionId);
+    url.searchParams.set("download", "1");
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 async function sendImmediateAlert(
@@ -73,10 +85,13 @@ async function sendImmediateAlert(
     });
   }
 
+  const emailReceiptUrl = receiptAttachment
+    ? getReceiptDownloadUrl(record.sessionId) ?? receiptUrl
+    : receiptUrl;
   const email =
     alertType === "core_paid"
-      ? buildCoreAlertEmail(record, receiptUrl)
-      : buildBlogAlertEmail(record, receiptUrl);
+      ? buildCoreAlertEmail(record, emailReceiptUrl)
+      : buildBlogAlertEmail(record, emailReceiptUrl);
   const receiptCode = sanitizeFileSegment(record.receiptCode || record.sessionId || "stripe-alert");
   const filePrefix = alertType === "core_paid" ? "core-payment" : "seo-brief";
   const attachments = [
