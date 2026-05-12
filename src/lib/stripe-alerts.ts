@@ -199,7 +199,12 @@ function buildEmailSummaryCards(sections: EmailSection[]) {
   return cards;
 }
 
-function buildEmailHtml(heading: string, sections: EmailSection[]) {
+const emailHeaderStyle = "padding:28px 32px; background:#ee2028;";
+
+function buildEmailHtml(
+  heading: string,
+  sections: EmailSection[],
+) {
   const summaryCards = buildEmailSummaryCards(sections);
   const summaryCardsHtml = summaryCards
     .map(
@@ -259,7 +264,7 @@ function buildEmailHtml(heading: string, sections: EmailSection[]) {
           <td style="padding:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:0; background:#ffffff; border-radius:24px; overflow:hidden;">
               <tr>
-                <td style="padding:28px 32px; background-color:#521015; background:#521015; background-image:linear-gradient(135deg, #521015 0%, #3b0d12 32%, #221012 65%, #181113 100%); border-top:6px solid #ee2028;">
+                <td style="${emailHeaderStyle}">
                   <div style="margin:0 0 14px; font-size:12px; line-height:16px; color:#ffe8eb; text-transform:uppercase; letter-spacing:0.12em; font-weight:700; font-family:Manrope,Arial,Helvetica,sans-serif;">
                     SiteTarik Order Delivery Summary
                   </div>
