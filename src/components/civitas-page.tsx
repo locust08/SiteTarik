@@ -101,41 +101,34 @@ const valueCards: ValueCard[] = [
 const services: Service[] = [
   {
     index: "01",
-    title: "CMS Website Upgrade",
+    title: "Website Reborn",
     description:
-      "We work from your current WordPress, Joomla, Drupal, or similar CMS website and prepare a cleaner hosted output with proper basic SEO foundations.",
+      "We replicate your current WordPress, Drupal, or similar CMS site, clean it up, and set it up with SEO foundations for a low-cost annual plan.",
     emphasis: "SEO foundations",
   },
   {
     index: "02",
     title: "Basic SEO Setup",
     description:
-      "Meta title, description, headings, and page structure are set up properly without changing your site direction.",
+      "Meta title, description, and structure are set up to support relevant ranking without changing the site direction.",
     emphasis: "support relevant ranking",
   },
   {
     index: "03",
-    title: "GTM & GA4 Setup",
-    description:
-      "Google Tag Manager and GA4 are set up so the website is ready for campaign measurement and ads tracking.",
-    emphasis: "ads tracking",
-  },
-  {
-    index: "04",
     title: "Hosted Output & Delivery",
     description:
       "The finished site is hosted, checked, and delivered via WhatsApp for a simple handoff.",
     emphasis: "delivered via WhatsApp",
   },
   {
-    index: "05",
+    index: "04",
     title: "Blog Add-On",
     description:
       "Launch 12 strategically structured blog pages in one go, backed by basic SEO, hosting, and WhatsApp delivery.",
     emphasis: "12 blog pages",
   },
   {
-    index: "06",
+    index: "05",
     title: "Blog Structure Support",
     description:
       "The blog content structure is tightened so all 12 pages stay clear, consistent, and search-friendly.",
@@ -147,8 +140,8 @@ const whyChooseReasons: WhyChooseReason[] = [
   { index: "01", title: "Low annual cost", icon: TrendingUp },
   { index: "02", title: "Fast turnaround", icon: CalendarDays },
   { index: "03", title: "Basic SEO setup", icon: Search },
-  { index: "04", title: "GTM and GA4 setup", icon: Workflow },
-  { index: "05", title: "Works with existing CMS sites", icon: MonitorSmartphone },
+  { index: "04", title: "Works with existing CMS sites", icon: MonitorSmartphone },
+  { index: "05", title: "Simple submission", icon: Workflow },
   { index: "06", title: "No technical setup", icon: Settings2 },
 ];
 
@@ -237,7 +230,7 @@ const faqItems: FaqItem[] = [
   },
   {
     question: "What is included in SEO Enhancement?",
-    answer: <>SEO Enhancement is RM220 total and adds 12 SEO-friendly blog pages to an upgraded, ad-tracking-ready website.</>,
+    answer: <>SEO Enhancement is RM220 total and adds 12 SEO-friendly blog pages to a refreshed, ad-ready website.</>,
   },
   {
     question: "Do I need technical skills?",
@@ -252,7 +245,7 @@ const heroTrustItems = [
 ];
 
 const pricingCoreIncludes = [
-  "CMS website upgrade",
+  "Website reborn",
   "Basic SEO setup",
   "GTM and GA4 setup",
   "Ads tracking ready",
@@ -371,8 +364,8 @@ export function CivitasPage() {
   const selectedPackageLabel = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageTitle = getSiteTarikPackageTitle(selectedPackage);
   const selectedPackageDescription = isBlogPackage
-    ? "SEO Enhancement adds 12 SEO-friendly blog pages to an upgraded, ad-tracking-ready website with GTM and GA4."
-    : "Core Upgrade prepares your existing CMS website with basic SEO, GTM, GA4, hosting, and WhatsApp delivery.";
+    ? "SEO Enhancement adds 12 SEO-friendly blog pages to a refreshed, ad-ready website with GTM and GA4."
+    : "Core Reborn gives you a clean website refresh with basic SEO, GTM, GA4, hosting, and WhatsApp delivery.";
   const selectedPackageIncludes = isBlogPackage
     ? pricingBlogIncludes
     : pricingCoreIncludes;
@@ -382,20 +375,20 @@ export function CivitasPage() {
   const problemPoints = [
     {
       index: "01",
-      title: "Your SEO setup is incomplete",
-      description: "Missing titles, descriptions, or structure can weaken search relevance.",
+      title: "Your website feels outdated",
+      description: "An older layout can weaken trust at first glance.",
       icon: MonitorSmartphone,
     },
     {
       index: "02",
-      title: "Tracking is not ready",
-      description: "Campaigns need GTM and GA4 foundations before ads can be measured properly.",
+      title: "Updates take too long",
+      description: "Small changes should not turn into costly delays.",
       icon: Zap,
     },
     {
       index: "03",
-      title: "CMS setup feels messy",
-      description: "A cleaner hosted output helps reduce plugin risk and keeps delivery simple.",
+      title: "Content falls behind",
+      description: "Busy teams often struggle to keep the site current.",
       icon: CalendarDays,
     },
   ];
@@ -655,13 +648,12 @@ export function CivitasPage() {
           <div className="mx-auto grid w-full max-w-[1150px] items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
             <Reveal className="max-w-[640px]">
               <h1 className="max-w-[12.5ch] font-[family-name:var(--font-heading)] text-[3.05rem] leading-[1.08] tracking-[-0.042em] sm:text-[4rem] sm:leading-[1.04] lg:text-[4.8rem] lg:leading-[1.01]">
-                Upgrade Your Existing CMS Website for SEO and Tracking.
+                Upgrade Your WordPress. Skip the Full Rebuild.
               </h1>
 
               <p className="mt-7 max-w-[33rem] text-lg font-medium leading-8 text-white/74 sm:text-xl">
-                Set up proper basic SEO, GTM, GA4, and ads tracking readiness
-                without a full rebuild. Built for WordPress, Joomla, Drupal,
-                and similar CMS platforms.
+                Upgrade your existing site with basic SEO and no full rebuild.
+                Built for WordPress, Joomla, Drupal, and similar CMS platforms.
               </p>
 
               <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
@@ -702,10 +694,10 @@ export function CivitasPage() {
               <div className="relative mx-auto w-full max-w-[620px]">
                 <div className="relative overflow-hidden rounded-[2.1rem] shadow-[0_22px_56px_rgba(8,8,10,0.16)]">
                   <div className="absolute left-4 top-4 z-10 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
-                    Existing CMS
+                    Before
                   </div>
                   <div className="absolute right-4 top-4 z-10 rounded-full bg-[var(--gold-soft)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--gold)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
-                    SEO Ready
+                    After
                   </div>
                   <Image
                     src={heroImage}
@@ -733,13 +725,13 @@ export function CivitasPage() {
                 </Reveal>
                 <Reveal delay={100}>
                   <h2 className="mx-auto max-w-[14ch] font-[family-name:var(--font-heading)] text-[2.65rem] leading-[1.03] tracking-[-0.04em] sm:text-[3.2rem] lg:mx-0 lg:text-[3.8rem]">
-                    Existing CMS websites need a smarter{" "}
+                    Existing websites need a smarter{" "}
                     <span className="text-[var(--gold)]">upgrade</span>, not a
                     rebuild.
                   </h2>
                   <p className="mx-auto mt-5 max-w-[34rem] text-lg leading-8 text-[var(--muted)] lg:mx-0">
-                    A smarter upgrade sets up proper basic SEO, GTM, GA4, and
-                    ads tracking readiness without changing the whole website.
+                    A smarter upgrade can strengthen clarity and conversion
+                    without a full rebuild.
                   </p>
                   <div className="mt-7 flex justify-center lg:justify-start">
                     <CtaLink href="#how-it-work" variant="soft">
@@ -912,8 +904,8 @@ export function CivitasPage() {
             <Reveal delay={360} className="pt-5 text-center">
               <div className="mx-auto max-w-[36rem]">
                 <p className="text-base leading-7 text-[var(--muted)]">
-                  Built for decision-makers who want a CMS website upgrade with
-                  proper basic SEO, GTM, GA4, and blog growth available when needed.
+                  Built for decision-makers who want an SEO-ready reborn at a
+                  low annual cost, with blog growth available when needed.
                 </p>
                 <div className="mt-4 flex justify-center">
                   <CtaLink href="#pricing" variant="soft">
@@ -933,12 +925,11 @@ export function CivitasPage() {
             <Reveal className="mx-auto max-w-[820px] text-center">
               <SectionLabel centered>Visual Showcase</SectionLabel>
               <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[2.85rem] leading-[1.03] tracking-[-0.05em] sm:text-[3.45rem] lg:text-[4.2rem]">
-                See What Your Website Can <span className="text-[#ee2028]">Support</span>
+                See What Your Website Can <span className="text-[#ee2028]">Become</span>
               </h2>
               <p className="mt-6 mx-auto max-w-[40rem] text-lg leading-8 text-[var(--muted)]">
-                We upgrade your existing WordPress, Joomla, Drupal, or similar CMS site
-                with proper <span className="text-[#ee2028]">basic SEO</span>, GTM, GA4,
-                hosting, and ads tracking readiness without starting over.
+                We refresh your existing WordPress, Drupal, or similar CMS site into a cleaner
+                version that supports stronger <span className="text-[#ee2028]">SEO relevance</span> without starting over.
               </p>
             </Reveal>
 
@@ -955,7 +946,7 @@ export function CivitasPage() {
             <Reveal delay={420} className="mt-12 text-center">
               <div className="mx-auto flex max-w-[46rem] flex-col items-center gap-4">
                 <p className="max-w-[34rem] text-base leading-8 text-[var(--muted)]">
-                  CMS website upgrade from <span className="text-[#ee2028]">RM100/year</span>, plus an optional <span className="text-[#ee2028]">RM120</span> Blog Add-On for
+                  Website reborn from <span className="text-[#ee2028]">RM100/year</span>, plus an optional <span className="text-[#ee2028]">RM120</span> Blog Add-On for
                   {" "}a 12-page upgrade.
                 </p>
                 <CtaLink href="#contact" variant="soft">
@@ -1043,7 +1034,7 @@ export function CivitasPage() {
               </h2>
               <p className="mt-5 max-w-[28rem] text-lg leading-8 text-[var(--muted)]">
                 One clear plan for existing websites. Add the{" "}
-                <span className="text-[#ee2028]">blog add-on</span> only when you need more SEO content.
+                <span className="text-[#ee2028]">blog switch</span> only when you need more content.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 {["Clear scope", "No hidden cost", "Straightforward delivery"].map((note) => (
@@ -1279,7 +1270,7 @@ export function CivitasPage() {
               <Reveal delay={520} className="mt-16 text-center">
                 <p className="mx-auto mb-4 max-w-[34rem] text-base leading-8 text-[var(--muted)]">
                   A clear process for existing websites. Payment first for the
-                  blog add-on, then the brief, then the WhatsApp handoff.
+                  blog add-on, then the brief, then the handoff.
                 </p>
                 <CtaLink href="#contact" variant="soft">
                   Submit My Website

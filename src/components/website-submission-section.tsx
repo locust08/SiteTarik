@@ -65,13 +65,12 @@ const packagePlans: Array<{
 }> = [
   {
     value: "core",
-    title: "Core Upgrade",
+    title: "Core Reborn",
     price: "RM100 / year",
-    summary: "Best for existing CMS websites that need proper basic SEO, GTM, GA4, hosting, and WhatsApp delivery.",
+    summary: "Best for existing websites that need a lean refresh with basic SEO, hosting, and WhatsApp delivery.",
     highlights: [
-      "CMS website upgrade prepared",
+      "Website refresh prepared",
       "Basic SEO setup included",
-      "GTM and GA4 setup included",
       "Hosted version delivered on WhatsApp",
     ],
   },
@@ -423,7 +422,7 @@ export function WebsiteSubmissionSection({
   const introCopy =
     selectedPackage === "blog"
       ? "SEO Enhancement selected. Pay first, then complete the brief."
-      : "Core Upgrade selected. Share the essentials and we will handle the rest.";
+      : "Core Reborn selected. Share the essentials and we’ll handle the rest.";
 
   useEffect(() => {
     try {
@@ -740,8 +739,8 @@ export function WebsiteSubmissionSection({
             Submit Your Website
           </h2>
           <p className="mx-auto mt-6 max-w-[44rem] text-base leading-8 text-[var(--muted)] sm:text-lg">
-            Share your CMS website details and package. We&apos;ll deliver a hosted output with
-            <span className="text-[#ee2028]"> basic SEO, GTM, GA4</span>, ads tracking readiness, and the
+            Share your website details and package. We&apos;ll deliver a hosted version with
+            <span className="text-[#ee2028]"> basic SEO</span> and the
             <span className="text-[#ee2028]"> final link on WhatsApp</span>.
           </p>
         </div>
