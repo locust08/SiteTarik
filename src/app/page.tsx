@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { CivitasPage } from "@/components/civitas-page";
 
 export const metadata: Metadata = {
-  title: "CMS Website Upgrade Malaysia | Basic SEO, GTM & GA4 Setup",
+  title: "SiteTarik | WordPress & CMS Website Upgrade for Small Business",
   description:
-    "Upgrade your existing WordPress, Joomla, Drupal, or CMS website with proper basic SEO, GTM, GA4, ads tracking readiness, hosting, and WhatsApp delivery from RM100/year.",
+    "One-to-one website refresh for small business WordPress, Drupal, Joomla, and similar CMS sites, with basic SEO or the SEO Enhancement 12-page blog add-on.",
   keywords: [
     "CMS website upgrade Malaysia",
     "basic SEO setup Malaysia",
