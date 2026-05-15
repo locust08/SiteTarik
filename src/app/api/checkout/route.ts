@@ -38,9 +38,9 @@ const packageConfig: Record<
   }
 > = {
   core: {
-    title: "Core Reborn",
+    title: "Core Upgrade",
     amount: 10000,
-    description: "Annual core reborn package with basic SEO and hosting handoff.",
+    description: "Annual CMS website upgrade package with basic SEO, GTM, GA4, and hosting handoff.",
     mode: "subscription",
   },
   blog: {

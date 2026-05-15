@@ -410,12 +410,12 @@ export function buildCoreAlertEmail(
   receiptUrl?: string | null,
 ) {
   const subject = [
-    "Core Reborn paid",
+    "Core Upgrade paid",
     record.businessName || record.fullName || "New order",
     record.whatsappNumber || "WhatsApp missing",
     record.receiptCode || "No receipt",
   ].join(" | ");
-  const heading = "A new Core Reborn payment is ready for delivery.";
+  const heading = "A new Core Upgrade payment is ready for delivery.";
   const sections = getBaseEmailSections(record, receiptUrl);
 
   return {

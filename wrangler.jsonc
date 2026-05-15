@@ -1,19 +1,30 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sitetarik",
+  "account_id": "e7c515dde995479daacd82ad79dfc3e8",
   // Keep NEXT_PUBLIC_* values in your Cloudflare Worker environment.
   // Add STRIPE_SECRET_KEY with `wrangler secret put STRIPE_SECRET_KEY` instead of committing it here.
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-17",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://sitetarik.com",
+    "NEXT_PUBLIC_GTM_ID": "GTM-5F3MLDMN",
+    "NEXT_PUBLIC_GA4_MEASUREMENT_ID": "G-2RV95WLNQ2"
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
   "routes": [
     {
-      "pattern": "www.sitetarik.com",
-      "custom_domain": true
+      "pattern": "sitetarik.com/*",
+      "zone_name": "sitetarik.com"
+    },
+    {
+      "pattern": "www.sitetarik.com/*",
+      "zone_name": "sitetarik.com"
     }
   ]
 }

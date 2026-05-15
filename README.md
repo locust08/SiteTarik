@@ -36,9 +36,8 @@ The checkout readiness check will stay disabled until `NEXT_PUBLIC_SITE_URL` is 
 
 Keep the existing OpenNext + Cloudflare Workers deployment model.
 
-- Set `NEXT_PUBLIC_SITE_URL` in the Cloudflare Worker environment to the canonical production origin.
-- Set `NEXT_PUBLIC_GTM_ID=GTM-5F3MLDMN` as a plain text Worker variable in each environment where GTM should run.
-- Set `NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-2RV95WLNQ2` as a plain text Worker variable when you want direct GA4 fallback available in that environment. The property reference `534874257` is not enough on its own.
+- The production Worker is routed to `https://sitetarik.com/*` and `https://www.sitetarik.com/*` in `wrangler.jsonc`.
+- `NEXT_PUBLIC_SITE_URL=https://sitetarik.com`, `NEXT_PUBLIC_GTM_ID=GTM-5F3MLDMN`, and `NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-2RV95WLNQ2` are committed as plain text Worker variables in `wrangler.jsonc`.
 - Set `STRIPE_SECRET_KEY` as a Wrangler/Cloudflare secret, not in `wrangler.jsonc`:
 
 ```bash

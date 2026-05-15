@@ -9,7 +9,7 @@ export const siteTarikTimeZone = "Asia/Kuala_Lumpur";
 export type SiteTarikPackagePlan = "core" | "blog";
 
 export const siteTarikPackageTitles: Record<SiteTarikPackagePlan, string> = {
-  core: "Core Reborn",
+  core: "Core Upgrade",
   blog: "SEO Enhancement",
 };
 
