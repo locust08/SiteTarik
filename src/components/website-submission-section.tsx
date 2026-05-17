@@ -735,7 +735,7 @@ export function WebsiteSubmissionSection({
             />
             <span>Form Section</span>
           </div>
-          <h2 className="mx-auto max-w-none whitespace-nowrap font-[family-name:var(--font-heading)] text-[2.7rem] leading-[0.98] tracking-[-0.06em] sm:text-[3.2rem] lg:text-[4.2rem]">
+          <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[clamp(2.35rem,11vw,2.7rem)] leading-[0.98] tracking-[-0.04em] sm:max-w-none sm:whitespace-nowrap sm:text-[3.2rem] lg:text-[4.2rem]">
             Submit Your Website
           </h2>
           <p className="mx-auto mt-6 max-w-[44rem] text-base leading-8 text-[var(--muted)] sm:text-lg">
@@ -746,10 +746,10 @@ export function WebsiteSubmissionSection({
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-5">
-          <div className="mx-auto w-full max-w-[960px] rounded-[2rem] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)] sm:p-8">
+          <div className="mx-auto w-full max-w-[960px] rounded-[1.45rem] border border-[var(--border)] bg-white p-4 shadow-[var(--shadow)] sm:rounded-[2rem] sm:p-8">
             <div className="border-b border-[var(--border)] pb-6">
               <div className="min-w-0">
-                <h3 className="mt-4 max-w-[14ch] font-[family-name:var(--font-heading)] text-[2.2rem] leading-[1.02] tracking-[-0.04em] sm:text-[2.6rem]">
+                <h3 className="mt-4 max-w-[15ch] font-[family-name:var(--font-heading)] text-[clamp(1.95rem,8vw,2.2rem)] leading-[1.02] tracking-[-0.035em] sm:max-w-[14ch] sm:text-[2.6rem]">
                   Strategic brief for a clear next step
                 </h3>
                 <p className="mt-4 max-w-[36rem] text-base leading-7 text-[var(--muted)]">
@@ -1119,7 +1119,7 @@ export function WebsiteSubmissionSection({
                   <button
                     type="submit"
                     disabled={isSubmitting || !checkoutReady || !whatsappConsent}
-                    className={`group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 ${
+                    className={`group inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 sm:w-auto ${
                       isSubmitting || !checkoutReady || !whatsappConsent
                         ? "cursor-not-allowed bg-[#f3a4a8] shadow-none"
                         : "bg-[var(--gold)] hover:-translate-y-0.5 hover:bg-[#d81c23] hover:shadow-[0_18px_35px_rgba(0,0,0,0.16)]"

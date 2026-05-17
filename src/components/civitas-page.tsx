@@ -329,7 +329,7 @@ function ShowcaseMockup({
   };
 
   return (
-    <div className="relative h-[clamp(420px,36vw,440px)] overflow-hidden rounded-[1.7rem] border border-[rgba(0,0,0,0.08)] bg-white p-3 shadow-[0_18px_42px_rgba(0,0,0,0.06)] sm:h-[clamp(440px,34vw,460px)]">
+    <div className="relative h-[clamp(260px,74vw,360px)] overflow-hidden rounded-[1.35rem] border border-[rgba(0,0,0,0.08)] bg-white p-2 shadow-[0_18px_42px_rgba(0,0,0,0.06)] sm:h-[clamp(360px,48vw,440px)] sm:rounded-[1.7rem] sm:p-3 xl:h-[clamp(440px,34vw,460px)]">
       <div
         className="group relative h-full overflow-hidden rounded-[1.45rem] bg-[var(--surface-strong)]"
         onMouseMove={handlePointerMove}
@@ -344,7 +344,7 @@ function ShowcaseMockup({
           style={{
             transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(1.03)`,
           }}
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 560px"
+          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 44vw, (max-width: 1280px) 50vw, 560px"
         />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.06)_100%)] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
       </div>
@@ -617,7 +617,7 @@ export function CivitasPage() {
             : "pointer-events-none opacity-0"
         } lg:hidden`}
       >
-        <div className="hero-panel grain absolute inset-x-4 top-24 rounded-[2rem] border border-white/8 px-6 py-8 text-white shadow-[var(--shadow)]">
+        <div className="hero-panel grain absolute left-4 top-24 w-[calc(100%-2rem)] rounded-[2rem] border border-white/8 px-6 py-8 text-white shadow-[var(--shadow)]">
           <div className="mb-8 space-y-5">
             {navItems.map((item) => (
               <Link
@@ -644,19 +644,19 @@ export function CivitasPage() {
       </div>
 
       <main id="top">
-        <section className="hero-panel grain relative isolate overflow-hidden px-6 pb-20 pt-32 text-white sm:px-8 lg:px-10 lg:pb-24 lg:pt-36">
-          <div className="mx-auto grid w-full max-w-[1150px] items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
+        <section className="hero-panel grain relative isolate overflow-hidden px-5 pb-16 pt-36 text-white sm:px-8 sm:pb-20 lg:px-10 lg:pb-24 lg:pt-36">
+          <div className="mx-auto grid w-full max-w-[1150px] items-center gap-10 sm:gap-14 lg:grid-cols-[1.02fr_0.98fr]">
             <Reveal className="max-w-[640px]">
-              <h1 className="max-w-[12.5ch] font-[family-name:var(--font-heading)] text-[3.05rem] leading-[1.08] tracking-[-0.042em] sm:text-[4rem] sm:leading-[1.04] lg:text-[4.8rem] lg:leading-[1.01]">
+              <h1 className="max-w-[12.5ch] font-[family-name:var(--font-heading)] text-[clamp(2.55rem,12vw,3.05rem)] leading-[1.08] tracking-[-0.04em] sm:text-[4rem] sm:leading-[1.04] lg:text-[4.8rem] lg:leading-[1.01]">
                 Upgrade Your WordPress. Skip the Full Rebuild.
               </h1>
 
-              <p className="mt-7 max-w-[33rem] text-lg font-medium leading-8 text-white/74 sm:text-xl">
+              <p className="mt-6 max-w-[33rem] text-base font-medium leading-7 text-white/74 sm:mt-7 sm:text-xl sm:leading-8">
                 Upgrade your existing site with basic SEO and no full rebuild.
                 Built for WordPress, Joomla, Drupal, and similar CMS platforms.
               </p>
 
-              <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="mt-8 flex flex-col items-start gap-4 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
                 <CtaLink
                   href="#contact"
                   variant="light"
@@ -675,11 +675,11 @@ export function CivitasPage() {
                 </Link>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3 text-sm text-white/84">
+              <div className="mt-7 flex flex-wrap gap-2.5 text-[0.78rem] text-white/84 sm:mt-8 sm:gap-3 sm:text-sm">
                 {heroTrustItems.map((item) => (
                   <div
                     key={item}
-                    className="rounded-full border border-white/10 bg-white/6 px-4 py-2.5 shadow-[0_12px_30px_rgba(0,0,0,0.1)]"
+                    className="rounded-full border border-white/10 bg-white/6 px-3.5 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.1)] sm:px-4 sm:py-2.5"
                   >
                     <div className="flex items-center gap-3">
                       <span className="h-2.5 w-2.5 rounded-full bg-[var(--gold)]" />
@@ -692,7 +692,7 @@ export function CivitasPage() {
 
             <Reveal delay={150} className="relative">
               <div className="relative mx-auto w-full max-w-[620px]">
-                <div className="relative overflow-hidden rounded-[2.1rem] shadow-[0_22px_56px_rgba(8,8,10,0.16)]">
+                <div className="relative overflow-hidden rounded-[1.5rem] shadow-[0_22px_56px_rgba(8,8,10,0.16)] sm:rounded-[2.1rem]">
                   <div className="absolute left-4 top-4 z-10 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
                     Before
                   </div>
@@ -924,16 +924,16 @@ export function CivitasPage() {
           <div className="mx-auto w-full max-w-[1260px]">
             <Reveal className="mx-auto max-w-[820px] text-center">
               <SectionLabel centered>Visual Showcase</SectionLabel>
-              <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[2.85rem] leading-[1.03] tracking-[-0.05em] sm:text-[3.45rem] lg:text-[4.2rem]">
+              <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[clamp(2.45rem,10.5vw,2.85rem)] leading-[1.03] tracking-[-0.04em] sm:text-[3.45rem] lg:text-[4.2rem]">
                 See What Your Website Can <span className="text-[#ee2028]">Become</span>
               </h2>
-              <p className="mt-6 mx-auto max-w-[40rem] text-lg leading-8 text-[var(--muted)]">
+              <p className="mx-auto mt-5 max-w-[40rem] text-base leading-7 text-[var(--muted)] sm:mt-6 sm:text-lg sm:leading-8">
                 We refresh your existing WordPress, Drupal, or similar CMS site into a cleaner
                 version that supports stronger <span className="text-[#ee2028]">SEO relevance</span> without starting over.
               </p>
             </Reveal>
 
-            <div className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-2">
+            <div className="mt-10 grid gap-4 sm:mt-14 sm:gap-6 md:grid-cols-2 xl:grid-cols-2">
               {showcasePanels.map((panel, index) => (
                 <Reveal key={`${panel.title}-${panel.theme}`} delay={80 + index * 55}>
                   <article>
@@ -1016,7 +1016,7 @@ export function CivitasPage() {
         >
           <div className="mx-auto grid w-full max-w-[1260px] gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <Reveal>
-              <div className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-white shadow-[var(--shadow)]">
+              <div className="relative max-h-[320px] overflow-hidden rounded-[1.6rem] border border-[var(--border)] bg-white shadow-[var(--shadow)] sm:max-h-none sm:rounded-[2rem]">
                 <Image
                   src={pricingImage}
                   alt="Pricing discussion"
@@ -1140,30 +1140,6 @@ export function CivitasPage() {
                             </span>
                           </p>
                         ) : null}
-                      </div>
-                    </div>
-
-                    <div
-                      className={`grid transition-[grid-template-rows,opacity,margin-top] duration-300 ease-out ${
-                        isBlogPackage
-                          ? "mt-5 grid-rows-[1fr] opacity-100"
-                          : "mt-0 grid-rows-[0fr] opacity-0"
-                      }`}
-                    >
-                      <div className="overflow-hidden">
-                        <div className="rounded-[1.3rem] bg-white p-4 shadow-[0_4px_14px_rgba(0,0,0,0.025)]">
-                          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--foreground)]/64">
-                            SEO Enhancement includes
-                          </p>
-                          <ul className="mt-3 space-y-3">
-                            {pricingBlogIncludes.map((item) => (
-                              <li key={item} className="flex items-start gap-3 text-sm leading-6 text-[var(--foreground)]">
-                                <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[var(--gold)]" />
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
                       </div>
                     </div>
 
