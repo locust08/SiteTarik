@@ -48,7 +48,11 @@ export default function RootLayout({
   });
 
   return (
-    <html lang="en" className={`${bodyFont.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${bodyFont.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col">
         <Script
           id="site-tarik-analytics-config"
