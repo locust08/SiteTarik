@@ -3,12 +3,13 @@
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
-import serviceShowcaseImage from "../../Image/Service Image.png";
-import educationShowcaseImage from "../../Image/Education Image.png";
-import homeLivingShowcaseImage from "../../Image/Home Living Image.png";
-import localSmeShowcaseImage from "../../Image/SME Image.png";
-import heroImage from "../../Image/Hero Image.png";
-import pricingImage from "../../Image/Pricing Image.png";
+import serviceShowcaseImage from "../../Image/Service Image.webp";
+import educationShowcaseImage from "../../Image/Education Image.webp";
+import homeLivingShowcaseImage from "../../Image/Home Living Image.webp";
+import localSmeShowcaseImage from "../../Image/SME Image.webp";
+import heroImage from "../../Image/Hero Image.webp";
+import pricingImage from "../../Image/Pricing Image.webp";
+import stressSectionImage from "../../Image/Stress Section.webp";
 import {
   ArrowRight,
   ArrowUp,
@@ -329,7 +330,7 @@ function ShowcaseMockup({
   };
 
   return (
-    <div className="relative h-[clamp(260px,74vw,360px)] overflow-hidden rounded-[1.35rem] border border-[rgba(0,0,0,0.08)] bg-white p-2 shadow-[0_18px_42px_rgba(0,0,0,0.06)] sm:h-[clamp(360px,48vw,440px)] sm:rounded-[1.7rem] sm:p-3 xl:h-[clamp(440px,34vw,460px)]">
+    <div className="showcase-mockup-shell relative overflow-hidden rounded-[1.35rem] border border-[rgba(0,0,0,0.08)] bg-white p-2 shadow-[0_18px_42px_rgba(0,0,0,0.06)] sm:rounded-[1.7rem] sm:p-3">
       <div
         className="group relative h-full overflow-hidden rounded-[1.45rem] bg-[var(--surface-strong)]"
         onMouseMove={handlePointerMove}
@@ -644,19 +645,19 @@ export function CivitasPage() {
       </div>
 
       <main id="top">
-        <section className="hero-panel grain relative isolate overflow-hidden px-5 pb-16 pt-36 text-white sm:px-8 sm:pb-20 lg:px-10 lg:pb-24 lg:pt-36">
-          <div className="mx-auto grid w-full max-w-[1150px] items-center gap-10 sm:gap-14 lg:grid-cols-[1.02fr_0.98fr]">
-            <Reveal className="max-w-[640px]">
-              <h1 className="max-w-[12.5ch] font-[family-name:var(--font-heading)] text-[clamp(2.55rem,12vw,3.05rem)] leading-[1.08] tracking-[-0.04em] sm:text-[4rem] sm:leading-[1.04] lg:text-[4.8rem] lg:leading-[1.01]">
+        <section className="hero-panel grain relative isolate flex min-h-screen overflow-hidden px-5 pb-10 pt-30 text-white sm:px-8 sm:pb-14 sm:pt-32 lg:px-10 lg:pb-16 lg:pt-30">
+          <div className="mx-auto grid w-full max-w-[1220px] items-center gap-9 sm:gap-12 lg:grid-cols-[1.04fr_0.96fr]">
+            <Reveal className="max-w-[720px]">
+              <h1 className="hero-title-fluid max-w-[13.5ch] font-[family-name:var(--font-heading)] leading-[0.98] tracking-normal">
                 Upgrade Your WordPress. Skip the Full Rebuild.
               </h1>
 
-              <p className="mt-6 max-w-[33rem] text-base font-medium leading-7 text-white/74 sm:mt-7 sm:text-xl sm:leading-8">
+              <p className="mt-5 max-w-[40rem] text-lg font-medium leading-8 text-white/78 sm:mt-6 sm:text-[1.225rem] sm:leading-8 lg:text-[1.375rem] lg:leading-[1.42]">
                 Upgrade your existing site with basic SEO and no full rebuild.
                 Built for WordPress, Joomla, Drupal, and similar CMS platforms.
               </p>
 
-              <div className="mt-8 flex flex-col items-start gap-4 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="mt-7 flex flex-col items-start gap-4 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
                 <CtaLink
                   href="#contact"
                   variant="light"
@@ -675,7 +676,7 @@ export function CivitasPage() {
                 </Link>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-2.5 text-[0.78rem] text-white/84 sm:mt-8 sm:gap-3 sm:text-sm">
+              <div className="mt-6 flex flex-wrap gap-2.5 text-[0.78rem] text-white/84 sm:mt-7 sm:gap-3 sm:text-sm">
                 {heroTrustItems.map((item) => (
                   <div
                     key={item}
@@ -705,6 +706,7 @@ export function CivitasPage() {
                     width={1200}
                     height={1200}
                     className="h-auto w-full object-cover"
+                    sizes="(max-width: 1024px) calc(100vw - 40px), 620px"
                     priority
                   />
                 </div>
@@ -744,11 +746,12 @@ export function CivitasPage() {
               <Reveal delay={140} className="relative">
                 <div className="relative mx-auto w-full max-w-[620px] overflow-hidden rounded-[2.1rem] border border-[var(--border)] bg-white shadow-[var(--shadow)]">
                   <Image
-                    src="/civitas/stress-section.png"
+                    src={stressSectionImage}
                     alt="Website upgrade visual showcase"
                     width={1240}
                     height={980}
                     className="h-auto w-full object-cover"
+                    sizes="(max-width: 1024px) calc(100vw - 48px), 620px"
                   />
                 </div>
               </Reveal>
@@ -880,7 +883,7 @@ export function CivitasPage() {
 
                           <div className="hidden md:flex md:h-11 md:w-11 md:items-center md:justify-center md:self-start md:rounded-full md:border md:border-[var(--border)] md:text-[var(--foreground)]/60">
                             <ArrowRight
-                              className="h-4 w-4 transform-gpu translate-x-0 text-[var(--foreground)]/70 transition-[color,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:translate-x-[1px] group-hover:text-[#ee2028]"
+                              className="h-4 w-4 transform-gpu translate-x-0 text-[var(--foreground)]/70 transition-[color,transform] duration-500 ease-out will-change-transform group-hover:translate-x-[1px] group-hover:text-[#ee2028]"
                             />
                           </div>
                         </div>
@@ -924,7 +927,7 @@ export function CivitasPage() {
           <div className="mx-auto w-full max-w-[1260px]">
             <Reveal className="mx-auto max-w-[820px] text-center">
               <SectionLabel centered>Visual Showcase</SectionLabel>
-              <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[clamp(2.45rem,10.5vw,2.85rem)] leading-[1.03] tracking-[-0.04em] sm:text-[3.45rem] lg:text-[4.2rem]">
+              <h2 className="visual-showcase-title-fluid mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] leading-[1.03] tracking-[-0.04em] sm:text-[3.45rem] lg:text-[4.2rem]">
                 See What Your Website Can <span className="text-[#ee2028]">Become</span>
               </h2>
               <p className="mx-auto mt-5 max-w-[40rem] text-base leading-7 text-[var(--muted)] sm:mt-6 sm:text-lg sm:leading-8">
@@ -1023,6 +1026,7 @@ export function CivitasPage() {
                   width={1024}
                   height={1024}
                   className="h-full w-full object-cover"
+                  sizes="(max-width: 1024px) calc(100vw - 48px), 540px"
                 />
               </div>
             </Reveal>
@@ -1112,6 +1116,7 @@ export function CivitasPage() {
                           type="button"
                           role="switch"
                           aria-checked={isBlogPackage}
+                          aria-label="Toggle SEO Enhancement package"
                           onClick={() =>
                             handlePackageChange(isBlogPackage ? "core" : "blog", {
                               trackSelection: true,

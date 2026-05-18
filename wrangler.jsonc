@@ -3,7 +3,9 @@
   "name": "sitetarik",
   "account_id": "e7c515dde995479daacd82ad79dfc3e8",
   // Keep NEXT_PUBLIC_* values in your Cloudflare Worker environment.
-  // Add STRIPE_SECRET_KEY with `wrangler secret put STRIPE_SECRET_KEY` instead of committing it here.
+  // Add server-only values with `wrangler secret put <NAME>` instead of committing them here:
+  // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY,
+  // DELIVERY_ALERT_FROM_EMAIL, DELIVERY_ALERT_TO_EMAIL.
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-17",
   "compatibility_flags": ["nodejs_compat"],

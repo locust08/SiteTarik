@@ -13,6 +13,10 @@ Public variables (`NEXT_PUBLIC_*`):
 Server-only variables:
 
 - `STRIPE_SECRET_KEY` - required Stripe secret key. This must stay server-only.
+- `STRIPE_WEBHOOK_SECRET` - required for `/api/stripe/webhook` to verify Stripe webhook events.
+- `RESEND_API_KEY` - required to send internal Core and SEO Enhancement notification emails.
+- `DELIVERY_ALERT_FROM_EMAIL` - verified Resend sender for internal order alerts.
+- `DELIVERY_ALERT_TO_EMAIL` - internal alert recipient. For SiteTarik, set this to `ava@locus-t.com.my`.
 
 Not required in the current codebase:
 
@@ -42,6 +46,21 @@ Keep the existing OpenNext + Cloudflare Workers deployment model.
 
 ```bash
 npx wrangler secret put STRIPE_SECRET_KEY
+```
+
+- Set the notification and webhook secrets as Wrangler/Cloudflare secrets too:
+
+```bash
+npx wrangler secret put STRIPE_WEBHOOK_SECRET
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put DELIVERY_ALERT_FROM_EMAIL
+npx wrangler secret put DELIVERY_ALERT_TO_EMAIL
+```
+
+- In Stripe test mode, keep the enabled `checkout.session.completed` webhook endpoint pointed at:
+
+```text
+https://sitetarik.com/api/stripe/webhook
 ```
 
 - If you use `npm run preview` before deploy, make the same values available to the Wrangler environment used for local Worker preview.

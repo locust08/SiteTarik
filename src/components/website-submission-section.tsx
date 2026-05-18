@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   ArrowRight,
   ChevronDown,
@@ -187,6 +187,7 @@ function TextInput({
   placeholder,
   value,
   onChange,
+  onFocus,
   required = false,
   helperText,
 }: {
@@ -195,6 +196,7 @@ function TextInput({
   placeholder: string;
   value: string;
   onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  onFocus?: () => void;
   required?: boolean;
   helperText?: string;
 }) {
@@ -208,6 +210,7 @@ function TextInput({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onFocus={onFocus}
         required={required}
         maxLength={characterLimit}
         className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]"
@@ -424,20 +427,7 @@ export function WebsiteSubmissionSection({
       ? "SEO Enhancement selected. Pay first, then complete the brief."
       : "Core Reborn selected. Share the essentials and we’ll handle the rest.";
 
-  useEffect(() => {
-    try {
-      const storedCompletion = parseSiteTarikOrderCompletion(
-        window.localStorage.getItem(orderCompleteStorageKey),
-      );
-      const activeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
-      const isActiveCompletion =
-        Boolean(activeSessionId) && storedCompletion?.sessionId === activeSessionId;
-
-      setCompletionState(isActiveCompletion ? storedCompletion.sessionId : null);
-    } catch {
-      setCompletionState(null);
-    }
-
+  const detectTargetLocation = useCallback(() => {
     if (didAttemptLocationDetect.current || websiteForm.targetLocation) {
       return;
     }
@@ -514,6 +504,21 @@ export function WebsiteSubmissionSection({
       },
     );
   }, [websiteForm.targetLocation]);
+
+  useEffect(() => {
+    try {
+      const storedCompletion = parseSiteTarikOrderCompletion(
+        window.localStorage.getItem(orderCompleteStorageKey),
+      );
+      const activeSessionId = window.sessionStorage.getItem(thankYouStripeSessionKey);
+      const isActiveCompletion =
+        Boolean(activeSessionId) && storedCompletion?.sessionId === activeSessionId;
+
+      setCompletionState(isActiveCompletion ? storedCompletion.sessionId : null);
+    } catch {
+      setCompletionState(null);
+    }
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -735,7 +740,7 @@ export function WebsiteSubmissionSection({
             />
             <span>Form Section</span>
           </div>
-          <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[clamp(2.35rem,11vw,2.7rem)] leading-[0.98] tracking-[-0.04em] sm:max-w-none sm:whitespace-nowrap sm:text-[3.2rem] lg:text-[4.2rem]">
+          <h2 className="submit-title-fluid mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] leading-[0.98] tracking-[-0.04em] sm:max-w-none sm:whitespace-nowrap sm:text-[3.2rem] lg:text-[4.2rem]">
             Submit Your Website
           </h2>
           <p className="mx-auto mt-6 max-w-[44rem] text-base leading-8 text-[var(--muted)] sm:text-lg">
@@ -749,7 +754,7 @@ export function WebsiteSubmissionSection({
           <div className="mx-auto w-full max-w-[960px] rounded-[1.45rem] border border-[var(--border)] bg-white p-4 shadow-[var(--shadow)] sm:rounded-[2rem] sm:p-8">
             <div className="border-b border-[var(--border)] pb-6">
               <div className="min-w-0">
-                <h3 className="mt-4 max-w-[15ch] font-[family-name:var(--font-heading)] text-[clamp(1.95rem,8vw,2.2rem)] leading-[1.02] tracking-[-0.035em] sm:max-w-[14ch] sm:text-[2.6rem]">
+                <h3 className="brief-title-fluid mt-4 max-w-[15ch] font-[family-name:var(--font-heading)] leading-[1.02] tracking-[-0.035em] sm:max-w-[14ch] sm:text-[2.6rem]">
                   Strategic brief for a clear next step
                 </h3>
                 <p className="mt-4 max-w-[36rem] text-base leading-7 text-[var(--muted)]">
@@ -859,6 +864,7 @@ export function WebsiteSubmissionSection({
                     placeholder="City or market"
                     value={websiteForm.targetLocation}
                     onChange={handleWebsiteInputChange}
+                    onFocus={detectTargetLocation}
                     required
                     helperText={locationDetectionState === "detecting" ? "Detecting location..." : undefined}
                   />

@@ -101,6 +101,46 @@ textarea {
   animation: blog-nudge 1.6s ease-in-out infinite;
 }
 
+.showcase-mockup-shell {
+  height: clamp(260px, 74vw, 360px);
+}
+
+.hero-title-fluid {
+  font-size: 3rem;
+}
+
+.visual-showcase-title-fluid {
+  font-size: clamp(2.45rem, 10.5vw, 2.85rem);
+}
+
+.submit-title-fluid {
+  font-size: clamp(2.35rem, 11vw, 2.7rem);
+}
+
+.brief-title-fluid {
+  font-size: clamp(1.95rem, 8vw, 2.2rem);
+}
+
+@media (min-width: 40rem) {
+  .showcase-mockup-shell {
+    height: clamp(360px, 48vw, 440px);
+  }
+
+  .hero-title-fluid {
+    font-size: 4.45rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .showcase-mockup-shell {
+    height: clamp(440px, 34vw, 460px);
+  }
+
+  .hero-title-fluid {
+    font-size: 5.35rem;
+  }
+}
+
 .grain {
   position: relative;
   overflow: hidden;

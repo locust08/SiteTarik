@@ -75,7 +75,7 @@ window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
             />
             <Script
               id="site-tarik-gtm"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               src={`https://www.googletagmanager.com/gtm.js?id=${analyticsConfig.gtmId}`}
             />
             <noscript>
@@ -94,12 +94,12 @@ window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
           <>
             <Script
               id="site-tarik-ga4-loader"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.ga4MeasurementId}`}
             />
             <Script
               id="site-tarik-ga4-bootstrap"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               dangerouslySetInnerHTML={{
                 __html: `
 window.dataLayer = window.dataLayer || [];

@@ -2,6 +2,7 @@ import {
   getStripeEnvironmentSnapshot,
   stripeApiRequest,
 } from "@/lib/stripe-rest";
+import { sendImmediateCorePaymentAlert } from "@/lib/delivery-alerts";
 import {
   getRequestDebugContext,
   logServerError,
@@ -62,6 +63,15 @@ export async function GET(request: Request) {
       subscription?: string | { id?: string };
       payment_status?: string;
       status?: string;
+      id?: string;
+      created?: number;
+      amount_total?: number | null;
+      currency?: string | null;
+      customer_email?: string | null;
+      customer_details?: {
+        email?: string | null;
+        name?: string | null;
+      } | null;
       metadata?: Record<string, string | undefined>;
     }>(`/checkout/sessions/${encodeURIComponent(sessionId)}`);
     const metadata = session.metadata ?? {};
@@ -146,6 +156,20 @@ export async function GET(request: Request) {
       paymentStatus: session.payment_status,
       sessionStatus: session.status,
     });
+
+    if (isPaid && selectedPackage === "core") {
+      try {
+        await sendImmediateCorePaymentAlert(session, {
+          idempotencyKey: `core-paid-verify:${sessionId}:${order.receiptCode || "receipt"}`,
+        });
+      } catch (error) {
+        logServerError("api.stripe.verify", "core payment alert fallback failed", error, {
+          sessionId,
+          selectedPackage,
+          ...getStripeEnvironmentSnapshot(),
+        });
+      }
+    }
 
     return Response.json({
       isPaid,
