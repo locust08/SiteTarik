@@ -239,8 +239,8 @@ const faqItems: FaqItem[] = [
 ];
 
 const heroTrustItems = [
-  "Small business ready",
-  "Clear process",
+  "Simple upgrade",
+  "No full rebuild",
   "From RM100/year",
 ];
 
