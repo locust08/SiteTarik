@@ -8,6 +8,7 @@ const menuLinks = [
   { label: "Pricing", href: "/#pricing" },
   { label: "What You Get", href: "/#services" },
   { label: "How It Works", href: "/#how-it-work" },
+  { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/#faq" },
 ];
 
@@ -83,7 +84,10 @@ export function CivitasFooter() {
 
         <div className="mt-14 border-t border-[rgba(0,0,0,0.08)] pt-6">
           <p className="text-sm leading-6 text-[rgba(17,17,17,0.56)]">
-            © {currentYear} SiteTarik. SEO-ready CMS website upgrades for growing businesses.
+            &copy; {currentYear} SiteTarik. SEO-ready CMS website upgrades for growing businesses.
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[rgba(17,17,17,0.48)]">
+            Project initiated by Digital Bee. In partnership with AI Hive Sdn Bhd.
           </p>
         </div>
       </div>

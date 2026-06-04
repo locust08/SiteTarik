@@ -12,7 +12,8 @@ Public variables (`NEXT_PUBLIC_*`):
 
 Server-only variables:
 
-- `STRIPE_SECRET_KEY` - required Stripe secret key. This must stay server-only.
+- `STRIPE_SECRET_KEY` - required Stripe secret key. This must stay server-only. If `STRIPE_LIVE_SECRET_KEY` is present, it is preferred.
+- `STRIPE_LIVE_SECRET_KEY` - optional Doppler live Stripe secret key. Use this for local/live parity with `https://sitetarik.com`.
 - `STRIPE_WEBHOOK_SECRET` - required for `/api/stripe/webhook` to verify Stripe webhook events.
 - `RESEND_API_KEY` - required to send internal Core and SEO Enhancement notification emails.
 - `DELIVERY_ALERT_FROM_EMAIL` - verified Resend sender for internal order alerts.
@@ -35,6 +36,32 @@ npm run dev
 ```
 
 The checkout readiness check will stay disabled until `NEXT_PUBLIC_SITE_URL` is a valid `http://` or `https://` URL and `STRIPE_SECRET_KEY` starts with `sk_test_` or `sk_live_`.
+
+## Local Live Mode
+
+The local app uses the same checkout code as `https://sitetarik.com`; Stripe decides sandbox or live mode from the server secret key:
+
+- Sandbox: `STRIPE_SECRET_KEY` starts with `sk_test_`.
+- Live: `STRIPE_LIVE_SECRET_KEY` or `STRIPE_SECRET_KEY` starts with `sk_live_`.
+
+For this workspace, Doppler is configured for project `locus-t-ai-backend` and config `dev`. To make `C:\Users\SiteTarik-restore` behave like the live SiteTarik checkout, keep these values in Doppler:
+
+```bash
+NEXT_PUBLIC_SITE_URL=https://sitetarik.com
+STRIPE_LIVE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+RESEND_API_KEY=...
+DELIVERY_ALERT_FROM_EMAIL=...
+DELIVERY_ALERT_TO_EMAIL=ava@locus-t.com.my
+```
+
+Then run local live mode with:
+
+```bash
+npm run dev:live
+```
+
+`STRIPE_LIVE_SECRET_KEY` is preferred over `.env.local`'s `STRIPE_SECRET_KEY`, so a local sandbox key will not override Doppler live mode. Use live keys only when you intentionally want real payments to be created from local testing. Stripe live secret values cannot be recovered from the public website or from Cloudflare after they are saved; copy them from Stripe or re-create/rotate them there.
 
 ## Cloudflare Deployment
 

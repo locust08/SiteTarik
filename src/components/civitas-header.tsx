@@ -2,10 +2,11 @@ import Link from "next/link";
 import { CtaLink } from "@/components/cta-link";
 
 const navItems = [
-  { label: "Pricing", href: "#pricing" },
-  { label: "What You Get", href: "#services" },
-  { label: "How It Works", href: "#how-it-work" },
-  { label: "Start", href: "#contact" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "What You Get", href: "/#services" },
+  { label: "How It Works", href: "/#how-it-work" },
+  { label: "Blog", href: "/blog" },
+  { label: "Start", href: "/#contact" },
 ];
 
 export function CivitasHeader({ solid = false }: { solid?: boolean }) {
@@ -34,7 +35,7 @@ export function CivitasHeader({ solid = false }: { solid?: boolean }) {
         </nav>
 
         <div className="hidden lg:flex">
-          <CtaLink href="#contact" variant={solid ? "brand" : "light"}>
+          <CtaLink href="/#contact" variant={solid ? "brand" : "light"}>
             Start My Website Upgrade
           </CtaLink>
         </div>

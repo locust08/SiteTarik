@@ -84,14 +84,19 @@ const nextSteps = [
   { title: "Delivery", description: "Sent to your WhatsApp.", icon: MessageCircle },
 ];
 
-const oneHourMs = 60 * 60 * 1000;
+const deliveryEtaMs = 5 * 60 * 60 * 1000;
 const loadingMs = 1200;
 const confirmationMs = 600;
 
 function formatCountdown(remainingMs: number) {
   const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
 
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
@@ -594,7 +599,7 @@ export function ThankYouPage({
       : "";
   const countdownStart = receipt.paidAt ?? receipt.submittedAt;
   const countdownLabel = countdownStart
-    ? formatCountdown(new Date(countdownStart).getTime() + oneHourMs - now)
+    ? formatCountdown(new Date(countdownStart).getTime() + deliveryEtaMs - now)
     : "";
 
   const handleWhatsAppClick = () => {
@@ -774,7 +779,7 @@ export function ThankYouPage({
               </div>
 
               <div className="mt-2.5 rounded-[1.1rem] border border-[rgba(238,32,40,0.14)] bg-[var(--gold-soft)] px-4 py-3.5 text-sm leading-6 text-[var(--foreground)]">
-                Delivered within <strong>1 hour</strong> on WhatsApp. Blog Add-On follows in the same handoff.
+                Delivered within <strong>5 hours</strong> on WhatsApp. Blog Add-On follows in the same handoff.
               </div>
             </div>
           </div>

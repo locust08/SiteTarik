@@ -72,6 +72,7 @@ const navItems: NavItem[] = [
   { label: "Pricing", href: "#pricing" },
   { label: "What You Get", href: "#services" },
   { label: "How It Works", href: "#how-it-work" },
+  { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -876,9 +877,9 @@ export function CivitasPage() {
                         </span>
                         <div className="hidden items-start justify-between gap-3 md:flex">
                           <div className="min-w-0">
-                            <h3 className="font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] group-hover:text-[var(--foreground)]">
+                            <span className="block font-[family-name:var(--font-heading)] text-[1.9rem] leading-[1.02] tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] group-hover:text-[var(--foreground)]">
                               {service.title}
-                            </h3>
+                            </span>
                           </div>
 
                           <div className="hidden md:flex md:h-11 md:w-11 md:items-center md:justify-center md:self-start md:rounded-full md:border md:border-[var(--border)] md:text-[var(--foreground)]/60">
@@ -965,7 +966,7 @@ export function CivitasPage() {
             <Reveal className="mx-auto max-w-[720px] text-center">
               <SectionLabel centered>Why choose this</SectionLabel>
               <h2 className="mx-auto max-w-[12ch] font-[family-name:var(--font-heading)] text-[2.8rem] leading-[1.04] tracking-[-0.04em] sm:text-[3.4rem] lg:text-[3.95rem]">
-                <span className="block">Designed for</span>
+                <span className="block">Designed for </span>
                 <span className="block">
                   <span className="text-[#ee2028]">Practical Results</span>, Not Complexity
                 </span>

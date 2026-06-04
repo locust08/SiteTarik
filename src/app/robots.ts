@@ -17,10 +17,20 @@ export default function robots(): MetadataRoute.Robots {
   const siteUrl = getSiteUrl();
 
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+      },
+      {
+        userAgent: ["Googlebot", "Bingbot", "DuckDuckBot", "Applebot"],
+        allow: "/",
+      },
+      {
+        userAgent: ["GPTBot", "ChatGPT-User", "OAI-SearchBot"],
+        allow: "/",
+      },
+    ],
     sitemap: `${siteUrl}/sitemap.xml`,
   };
 }

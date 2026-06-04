@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const whatsappHref =
   "https://wa.me/60129044583?text=Could%20we%20schedule%20a%20customized%20Digital%20Marketing%20Strategy%20session%20for%20my%20business%3F";
@@ -22,6 +23,12 @@ function WhatsAppIcon() {
 }
 
 export function FloatingWhatsApp() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/cms")) {
+    return null;
+  }
+
   return (
     <div className="group fixed bottom-5 right-5 z-[70]">
       <Link

@@ -692,9 +692,9 @@ export function WebsiteSubmissionSection({
       const message = error instanceof Error ? error.message : "Checkout failed.";
 
       if (message.includes("Missing STRIPE_SECRET_KEY")) {
-        setSubmitError("Checkout is not configured yet. Add STRIPE_SECRET_KEY to .env.local or your deployment environment to enable payment.");
-      } else if (message.includes("STRIPE_SECRET_KEY must start with")) {
-        setSubmitError("Checkout is not configured yet. STRIPE_SECRET_KEY must start with sk_test_ or sk_live_.");
+        setSubmitError("Checkout is not configured yet. Add STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY to .env.local, Doppler, or your deployment environment to enable payment.");
+      } else if (message.includes("must start with sk_test_ or sk_live_")) {
+        setSubmitError("Checkout is not configured yet. STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY must start with sk_test_ or sk_live_.");
       } else if (message.includes("Missing NEXT_PUBLIC_SITE_URL")) {
         setSubmitError("Checkout is not configured yet. Add NEXT_PUBLIC_SITE_URL to your environment and restart the app.");
       } else {

@@ -20,16 +20,20 @@ export async function GET() {
   if (!snapshot.hasStripeSecretKey) {
     return Response.json({
       ready: false,
-      message: "Checkout is not configured yet. Add STRIPE_SECRET_KEY to .env.local or your deployment environment to enable payment.",
+      message: "Checkout is not configured yet. Add STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY to .env.local, Doppler, or your deployment environment to enable payment.",
     });
   }
 
   if (snapshot.stripeKeyMode === "invalid") {
     return Response.json({
       ready: false,
-      message: "Checkout is not configured yet. STRIPE_SECRET_KEY must start with sk_test_ or sk_live_.",
+      message: "Checkout is not configured yet. STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY must start with sk_test_ or sk_live_.",
     });
   }
 
-  return Response.json({ ready: true, message: "" });
+  return Response.json({
+    ready: true,
+    message: "",
+    stripeKeyMode: snapshot.stripeKeyMode,
+  });
 }

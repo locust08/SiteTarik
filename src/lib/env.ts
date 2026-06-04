@@ -43,6 +43,16 @@ function getStripeKeyMode(secretKey: string | null): StripeKeyMode {
   return "invalid";
 }
 
+function readOptionalStripeSecretKey() {
+  const liveSecretKey = readOptionalEnvValue("STRIPE_LIVE_SECRET_KEY");
+
+  if (liveSecretKey) {
+    return liveSecretKey;
+  }
+
+  return readOptionalEnvValue("STRIPE_SECRET_KEY");
+}
+
 export function getRequiredSiteUrl() {
   const siteUrl = readOptionalEnvValue("NEXT_PUBLIC_SITE_URL");
 
@@ -54,14 +64,14 @@ export function getRequiredSiteUrl() {
 }
 
 export function getRequiredStripeSecretKey() {
-  const secretKey = readOptionalEnvValue("STRIPE_SECRET_KEY");
+  const secretKey = readOptionalStripeSecretKey();
 
   if (!secretKey) {
-    throw new Error("Missing STRIPE_SECRET_KEY. Configure it in your deployment environment before calling Stripe.");
+    throw new Error("Missing STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY. Configure it in your deployment environment before calling Stripe.");
   }
 
   if (getStripeKeyMode(secretKey) === "invalid") {
-    throw new Error("STRIPE_SECRET_KEY must start with sk_test_ or sk_live_.");
+    throw new Error("STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY must start with sk_test_ or sk_live_.");
   }
 
   return secretKey;
@@ -78,14 +88,16 @@ export function getRequiredStripeWebhookSecret() {
 }
 
 export function getStripeEnvironmentSnapshot() {
-  const secretKey = readOptionalEnvValue("STRIPE_SECRET_KEY");
+  const secretKey = readOptionalStripeSecretKey();
   const siteUrl = readOptionalEnvValue("NEXT_PUBLIC_SITE_URL");
   const siteUrlMode = getSiteUrlMode(siteUrl);
   const resendApiKey = readOptionalEnvValue("RESEND_API_KEY");
   const stripeWebhookSecret = readOptionalEnvValue("STRIPE_WEBHOOK_SECRET");
+  const hasStripeLiveSecretKey = Boolean(readOptionalEnvValue("STRIPE_LIVE_SECRET_KEY"));
 
   return {
     hasStripeSecretKey: Boolean(secretKey),
+    hasStripeLiveSecretKey,
     stripeKeyMode: getStripeKeyMode(secretKey),
     hasSiteUrl: Boolean(siteUrl),
     siteUrlMode,

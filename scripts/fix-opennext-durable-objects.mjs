@@ -87,12 +87,16 @@ async function __sitetarikStripeFetch(request, env) {
     return null;
   }
 
-  const secretKey = env?.STRIPE_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY;
+  const secretKey =
+    env?.STRIPE_LIVE_SECRET_KEY ??
+    process.env.STRIPE_LIVE_SECRET_KEY ??
+    env?.STRIPE_SECRET_KEY ??
+    process.env.STRIPE_SECRET_KEY;
   const siteUrl = env?.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   if (!secretKey) {
     return Response.json(
-      { error: "Missing STRIPE_SECRET_KEY. Configure it in your deployment environment before calling Stripe." },
+      { error: "Missing STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY. Configure it in your deployment environment before calling Stripe." },
       { status: 500 },
     );
   }

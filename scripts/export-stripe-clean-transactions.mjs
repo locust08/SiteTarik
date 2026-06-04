@@ -211,10 +211,11 @@ function shouldIncludeSession(session, includeUnpaid) {
 }
 
 async function main() {
-  const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
+  const secretKey =
+    process.env.STRIPE_LIVE_SECRET_KEY?.trim() || process.env.STRIPE_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    throw new Error("Missing STRIPE_SECRET_KEY in environment.");
+    throw new Error("Missing STRIPE_SECRET_KEY or STRIPE_LIVE_SECRET_KEY in environment.");
   }
 
   const options = parseArgs(process.argv.slice(2));

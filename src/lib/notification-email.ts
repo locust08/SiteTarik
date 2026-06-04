@@ -21,7 +21,8 @@ type NotificationEmailInput = {
 
 function getDeliveryMode(): DeliveryMode {
   const siteUrl = readOptionalEnvValue("NEXT_PUBLIC_SITE_URL");
-  const stripeSecretKey = readOptionalEnvValue("STRIPE_SECRET_KEY");
+  const stripeSecretKey =
+    readOptionalEnvValue("STRIPE_LIVE_SECRET_KEY") ?? readOptionalEnvValue("STRIPE_SECRET_KEY");
 
   if (stripeSecretKey?.startsWith("sk_live_")) {
     return "prod";
