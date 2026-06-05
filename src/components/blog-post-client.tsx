@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
-import { readBlogCmsContent } from "@/lib/blog-storage";
+import { blogCmsStorageKey, defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
+import { fetchBlogCmsContent, readBlogCmsContent } from "@/lib/blog-storage";
 
 function RevealIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -31,7 +31,18 @@ export function BlogPostClient({ slug }: { slug: string }) {
 
   useEffect(() => {
     const syncContent = () => setContent(readBlogCmsContent());
+    const syncServerContent = async () => {
+      try {
+        const serverContent = await fetchBlogCmsContent();
+        setContent(serverContent);
+        window.localStorage.setItem(blogCmsStorageKey, JSON.stringify(serverContent));
+      } catch {
+        syncContent();
+      }
+    };
+
     syncContent();
+    void syncServerContent();
     window.addEventListener("storage", syncContent);
     window.addEventListener("sitetarik-blog-cms-updated", syncContent);
 

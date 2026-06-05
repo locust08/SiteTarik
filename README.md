@@ -68,6 +68,7 @@ npm run dev:live
 Keep the existing OpenNext + Cloudflare Workers deployment model.
 
 - The production Worker is routed to `https://sitetarik.com/*` and `https://www.sitetarik.com/*` in `wrangler.jsonc`.
+- Blog CMS persistence uses Cloudflare D1 database `sitetarik-cms` through binding `sitetarik_cms`, and Cloudflare R2 bucket `sitetarik-cms-images` through binding `sitetarik_cms_images`.
 - `NEXT_PUBLIC_SITE_URL=https://sitetarik.com`, `NEXT_PUBLIC_GTM_ID=GTM-5F3MLDMN`, and `NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-2RV95WLNQ2` are committed as plain text Worker variables in `wrangler.jsonc`.
 - Set `STRIPE_SECRET_KEY` as a Wrangler/Cloudflare secret, not in `wrangler.jsonc`:
 

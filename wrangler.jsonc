@@ -19,6 +19,19 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "sitetarik_cms",
+      "database_name": "sitetarik-cms",
+      "database_id": "6e71730b-9ece-46ac-b747-8045c953a67f"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "sitetarik_cms_images",
+      "bucket_name": "sitetarik-cms-images"
+    }
+  ],
   "routes": [
     {
       "pattern": "sitetarik.com/*",

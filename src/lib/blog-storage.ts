@@ -58,3 +58,57 @@ export function writeBlogCmsContent(content: BlogCmsContent) {
   window.localStorage.setItem(blogCmsStorageKey, JSON.stringify(content));
   window.dispatchEvent(new CustomEvent("sitetarik-blog-cms-updated"));
 }
+
+export async function fetchBlogCmsContent() {
+  const response = await fetch("/api/cms/content", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not load CMS content.");
+  }
+
+  const content = (await response.json()) as unknown;
+
+  return isBlogCmsContent(content) ? normaliseBlogCmsContent(content) : defaultBlogContent;
+}
+
+export async function saveBlogCmsContent(content: BlogCmsContent, password: string) {
+  const response = await fetch("/api/cms/content", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "x-cms-password": password,
+    },
+    body: JSON.stringify(content),
+  });
+
+  if (!response.ok) {
+    const result = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(result?.error || "Could not save CMS content.");
+  }
+}
+
+export async function uploadBlogCmsImage(file: File, password: string) {
+  const formData = new FormData();
+  formData.set("image", file);
+
+  const response = await fetch("/api/cms/upload-image", {
+    method: "POST",
+    headers: {
+      "x-cms-password": password,
+    },
+    body: formData,
+  });
+
+  const result = (await response.json().catch(() => null)) as {
+    imageUrl?: string;
+    error?: string;
+  } | null;
+
+  if (!response.ok || !result?.imageUrl) {
+    throw new Error(result?.error || "Could not upload this image.");
+  }
+
+  return result.imageUrl;
+}

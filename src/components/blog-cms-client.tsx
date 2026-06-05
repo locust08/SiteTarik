@@ -35,7 +35,13 @@ import {
   type BlogPost,
   type BlogSection,
 } from "@/lib/blog-content";
-import { readBlogCmsContent, writeBlogCmsContent } from "@/lib/blog-storage";
+import {
+  fetchBlogCmsContent,
+  readBlogCmsContent,
+  saveBlogCmsContent,
+  uploadBlogCmsImage,
+  writeBlogCmsContent,
+} from "@/lib/blog-storage";
 
 const emptySection = (): BlogSection => ({
   id: crypto.randomUUID(),
@@ -661,7 +667,9 @@ export function BlogCmsClient() {
   const [failedImagePreview, setFailedImagePreview] = useState<string | null>(null);
   const [imageImportStatus, setImageImportStatus] = useState<string | null>(null);
   const [isImportingImage, setIsImportingImage] = useState(false);
+  const [serverSaveStatus, setServerSaveStatus] = useState<string | null>(null);
   const undoStackRef = useRef<BlogCmsContent[]>([]);
+  const hasLoadedServerContentRef = useRef(false);
 
   const selectedPost = useMemo(
     () => content.posts.find((post) => post.id === selectedPostId) ?? content.posts[0],
@@ -673,6 +681,66 @@ export function BlogCmsClient() {
     writeBlogCmsContent(nextContent);
     setSavedAt(new Date().toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" }));
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    async function loadServerContent() {
+      setServerSaveStatus("Loading cloud content...");
+
+      try {
+        const serverContent = await fetchBlogCmsContent();
+        const localContent = readBlogCmsContent();
+        const serverIsDefault = JSON.stringify(serverContent) === JSON.stringify(defaultBlogContent);
+        const localIsDefault = JSON.stringify(localContent) === JSON.stringify(defaultBlogContent);
+        const nextContent = serverIsDefault && !localIsDefault ? localContent : serverContent;
+
+        if (!isCurrent) {
+          return;
+        }
+
+        setContent(nextContent);
+        writeBlogCmsContent(nextContent);
+        setSelectedPostId(nextContent.posts[0]?.id ?? "");
+        hasLoadedServerContentRef.current = true;
+        setServerSaveStatus("Cloud content loaded.");
+      } catch {
+        if (!isCurrent) {
+          return;
+        }
+
+        hasLoadedServerContentRef.current = true;
+        setServerSaveStatus("Cloud unavailable. Saving locally for now.");
+      }
+    }
+
+    void loadServerContent();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !hasLoadedServerContentRef.current) {
+      return;
+    }
+
+    const saveTimer = window.setTimeout(() => {
+      setServerSaveStatus("Saving to cloud...");
+      saveBlogCmsContent(content, cmsPassword)
+        .then(() => setServerSaveStatus("Saved to cloud."))
+        .catch((error) =>
+          setServerSaveStatus(error instanceof Error ? error.message : "Could not save to cloud."),
+        );
+    }, 900);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [content, isAuthenticated]);
 
   const rememberUndoState = () => {
     undoStackRef.current = [content, ...undoStackRef.current].slice(0, 8);
@@ -738,7 +806,7 @@ export function BlogCmsClient() {
     });
   };
 
-  const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!selectedPost) {
       return;
     }
@@ -749,17 +817,22 @@ export function BlogCmsClient() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const imageValue = typeof reader.result === "string" ? reader.result : selectedPost.featuredImage;
+    setIsImportingImage(true);
+    setImageImportStatus("Uploading image to cloud...");
+
+    try {
+      const imageValue = await uploadBlogCmsImage(file, cmsPassword);
       setFailedImagePreview(null);
-      setImageImportStatus("Image attached for preview.");
+      setImageImportStatus("Image uploaded and ready to preview.");
       updatePost(selectedPost.id, {
         thumbnailImage: imageValue,
         featuredImage: imageValue,
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setImageImportStatus(error instanceof Error ? error.message : "Could not upload this image.");
+    } finally {
+      setIsImportingImage(false);
+    }
   };
 
   const handleImageUrlChange = (value: string) => {
@@ -1047,7 +1120,7 @@ export function BlogCmsClient() {
               action={
               <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
                 <Save className="h-4 w-4" />
-                {savedAt ? `Saved ${savedAt}` : "Auto-save on edit"}
+                {serverSaveStatus || (savedAt ? `Saved ${savedAt}` : "Auto-save on edit")}
               </span>
               }
             />

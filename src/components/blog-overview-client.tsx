@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
-import { readBlogCmsContent } from "@/lib/blog-storage";
+import { blogCmsStorageKey, defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
+import { fetchBlogCmsContent, readBlogCmsContent } from "@/lib/blog-storage";
 
 function RevealIcon({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +19,18 @@ export function BlogOverviewClient() {
 
   useEffect(() => {
     const syncContent = () => setContent(readBlogCmsContent());
+    const syncServerContent = async () => {
+      try {
+        const serverContent = await fetchBlogCmsContent();
+        setContent(serverContent);
+        window.localStorage.setItem(blogCmsStorageKey, JSON.stringify(serverContent));
+      } catch {
+        syncContent();
+      }
+    };
+
     syncContent();
+    void syncServerContent();
     window.addEventListener("storage", syncContent);
     window.addEventListener("sitetarik-blog-cms-updated", syncContent);
 
@@ -36,7 +47,7 @@ export function BlogOverviewClient() {
   return (
     <main className="min-h-screen bg-[var(--surface)] px-6 pb-10 pt-[118px] text-[var(--foreground)] sm:px-8 lg:px-10">
       <div className="mx-auto w-full max-w-[1120px]">
-        <header className="flex flex-col gap-5 border-b border-[var(--border)] pb-8 sm:flex-row sm:items-end sm:justify-between">
+        <header className="border-b border-[var(--border)] pb-8">
           <div className="max-w-[680px]">
             <h1 className="font-[family-name:var(--font-heading)] text-[3.4rem] font-semibold leading-none tracking-[-0.04em] sm:text-[5rem]">
               {content.overview.title}
@@ -45,15 +56,6 @@ export function BlogOverviewClient() {
               {content.overview.intro}
             </p>
           </div>
-          <Link
-            href="/cms"
-            className="group inline-flex items-center gap-2 self-start rounded-full border border-[rgba(238,32,40,0.16)] bg-[var(--surface-strong)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.22)] hover:bg-[var(--gold-soft)] hover:shadow-[0_12px_26px_rgba(0,0,0,0.06)] sm:self-auto"
-          >
-            Manage CMS
-            <RevealIcon>
-              <ArrowRight className="h-4 w-4" />
-            </RevealIcon>
-          </Link>
         </header>
 
         {posts.length > 0 ? (
@@ -61,7 +63,7 @@ export function BlogOverviewClient() {
             {posts.map((post) => (
               <article
                 key={post.id}
-                className="group overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.05)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[rgba(238,32,40,0.2)] hover:shadow-[0_16px_34px_rgba(0,0,0,0.08)]"
+                className="group overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.05)] transition-[border-color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[rgba(238,32,40,0.2)] hover:shadow-[0_16px_34px_rgba(0,0,0,0.08)]"
               >
                 <Link href={`/blog/${post.slug}`} className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-4">
                   <img
