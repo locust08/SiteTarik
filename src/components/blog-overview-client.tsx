@@ -61,31 +61,30 @@ export function BlogOverviewClient() {
             {posts.map((post) => (
               <article
                 key={post.id}
-                className="overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.05)]"
+                className="group overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.05)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[rgba(238,32,40,0.2)] hover:shadow-[0_16px_34px_rgba(0,0,0,0.08)]"
               >
-                <img
-                  src={post.thumbnailImage}
-                  alt=""
-                  className="h-64 w-full bg-[var(--surface-muted)] object-cover"
-                />
-                <div className="p-6">
-                  <time className="text-sm font-medium text-[var(--muted)]">
-                    {formatBlogDate(post.publishDate)}
-                  </time>
-                  <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-[-0.02em]">
-                    {post.title}
-                  </h2>
-                  <p className="mt-4 text-base leading-7 text-[var(--muted)]">{post.excerpt}</p>
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="group mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(238,32,40,0.16)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--gold)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.22)] hover:bg-[var(--gold-soft)] hover:shadow-[0_10px_22px_rgba(238,32,40,0.08)]"
-                  >
-                    Read More
-                    <RevealIcon>
-                      <ArrowRight className="h-4 w-4" />
-                    </RevealIcon>
-                  </Link>
-                </div>
+                <Link href={`/blog/${post.slug}`} className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-4">
+                  <img
+                    src={post.thumbnailImage}
+                    alt=""
+                    className="h-64 w-full bg-[var(--surface-muted)] object-cover"
+                  />
+                  <div className="p-6">
+                    <time className="text-sm font-medium text-[var(--muted)]">
+                      {formatBlogDate(post.publishDate)}
+                    </time>
+                    <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-[-0.02em]">
+                      {post.title}
+                    </h2>
+                    <p className="mt-4 text-base leading-7 text-[var(--muted)]">{post.excerpt}</p>
+                    <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(238,32,40,0.16)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--gold)] transition-[background-color,border-color,box-shadow,color] duration-200 group-hover:border-[rgba(238,32,40,0.22)] group-hover:bg-[var(--gold-soft)] group-hover:shadow-[0_10px_22px_rgba(238,32,40,0.08)]">
+                      Read More
+                      <RevealIcon>
+                        <ArrowRight className="h-4 w-4" />
+                      </RevealIcon>
+                    </span>
+                  </div>
+                </Link>
               </article>
             ))}
           </section>

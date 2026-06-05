@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Suspense } from "react";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
+import { PageTransition } from "@/components/page-transition";
 import { SiteTarikAnalytics } from "@/components/site-tarik-analytics";
 import { bodyFont } from "@/lib/manrope-font";
 import { getSiteTarikAnalyticsConfig } from "@/lib/site-tarik-analytics";
@@ -112,7 +113,7 @@ gtag('config', '${analyticsConfig.ga4MeasurementId}', { send_page_view: false })
             />
           </>
         ) : null}
-        {children}
+        <PageTransition>{children}</PageTransition>
         <Suspense fallback={null}>
           <SiteTarikAnalytics />
         </Suspense>

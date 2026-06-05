@@ -36,9 +36,9 @@ export const blogCmsStorageKey = "sitetarik_blog_cms_content_v1";
 
 export const defaultBlogContent: BlogCmsContent = {
   overview: {
-    title: "Blog",
+    title: "Website Growth Insights for SMEs",
     intro:
-      "Useful tips and simple guides to help your business improve online visibility, build trust, and get more enquiries.",
+      "Practical guides from SiteTarik to help SMEs improve website clarity, Google visibility, trust, and enquiries with a more strategic online presence.",
   },
   posts: [
     {
@@ -115,4 +115,3 @@ export function normalizeSlug(value: string) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 96);
 }
-

@@ -24,6 +24,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type ClipboardEvent,
   type FormEvent,
 } from "react";
 import {
@@ -114,10 +115,7 @@ const createPost = (): BlogPost => ({
 });
 
 const emptyCmsContent = (): BlogCmsContent => ({
-  overview: {
-    title: "",
-    intro: "",
-  },
+  overview: defaultBlogContent.overview,
   posts: [createPost()],
 });
 
@@ -535,6 +533,7 @@ function CmsSelectControl({
 const inputClass =
   "min-h-[52px] w-full rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-[15px] leading-6 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]";
 const cmsPassword = "123";
+const localImagePathPattern = /^[a-zA-Z]:[\\/].+\.(?:avif|gif|jpe?g|png|webp)$/i;
 
 function PreviewParagraphs({ text }: { text: string }) {
   const paragraphs = text.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
@@ -660,6 +659,8 @@ export function BlogCmsClient() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
   const [failedImagePreview, setFailedImagePreview] = useState<string | null>(null);
+  const [imageImportStatus, setImageImportStatus] = useState<string | null>(null);
+  const [isImportingImage, setIsImportingImage] = useState(false);
   const undoStackRef = useRef<BlogCmsContent[]>([]);
 
   const selectedPost = useMemo(
@@ -751,6 +752,8 @@ export function BlogCmsClient() {
     const reader = new FileReader();
     reader.onload = () => {
       const imageValue = typeof reader.result === "string" ? reader.result : selectedPost.featuredImage;
+      setFailedImagePreview(null);
+      setImageImportStatus("Image attached for preview.");
       updatePost(selectedPost.id, {
         thumbnailImage: imageValue,
         featuredImage: imageValue,
@@ -764,10 +767,62 @@ export function BlogCmsClient() {
       return;
     }
 
+    setFailedImagePreview(null);
+    setImageImportStatus(null);
     updatePost(selectedPost.id, {
       thumbnailImage: value,
       featuredImage: value,
     });
+  };
+
+  const importLocalImagePath = async (filePath: string) => {
+    if (!selectedPost || isImportingImage) {
+      return;
+    }
+
+    setIsImportingImage(true);
+    setImageImportStatus("Importing local image...");
+
+    try {
+      const response = await fetch("/api/cms/import-local-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ filePath }),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        imageUrl?: string;
+        error?: string;
+      } | null;
+
+      if (!response.ok || !result?.imageUrl) {
+        throw new Error(result?.error || "Could not import this image.");
+      }
+
+      setFailedImagePreview(null);
+      setImageImportStatus("Image imported and ready to preview.");
+      updatePost(selectedPost.id, {
+        thumbnailImage: result.imageUrl,
+        featuredImage: result.imageUrl,
+      });
+    } catch (error) {
+      setImageImportStatus(error instanceof Error ? error.message : "Could not import this image.");
+    } finally {
+      setIsImportingImage(false);
+    }
+  };
+
+  const handleImageInputPaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = event.clipboardData.getData("text").trim().replace(/^"|"$/g, "");
+
+    if (!localImagePathPattern.test(pastedText)) {
+      return;
+    }
+
+    event.preventDefault();
+    handleImageUrlChange(pastedText);
+    void importLocalImagePath(pastedText);
   };
 
   const addPost = () => {
@@ -996,14 +1051,14 @@ export function BlogCmsClient() {
               </span>
               }
             />
-            <div className="mt-6 grid gap-5 md:grid-cols-[0.35fr_0.65fr]">
+            <div className="mt-6 grid gap-5">
               <Field label="Page Title" required>
-                <input
-                  className={inputClass}
+                <AutoGrowTextarea
                   required
                   maxLength={characterLimits.pageTitle}
                   value={content.overview.title}
                   placeholder="e.g. Blog"
+                  minRows={1}
                   onChange={(event) =>
                     updateContent({
                       ...content,
@@ -1145,6 +1200,7 @@ export function BlogCmsClient() {
                           maxLength={characterLimits.imageUrl}
                           value={selectedPost.featuredImage}
                           onChange={(event) => handleImageUrlChange(event.target.value)}
+                          onPaste={handleImageInputPaste}
                           placeholder="e.g. /Image/blog.webp"
                         />
                         <CharacterCount value={selectedPost.featuredImage} limit={characterLimits.imageUrl} />
@@ -1161,7 +1217,7 @@ export function BlogCmsClient() {
                           />
                         </label>
                         <p className="text-xs leading-5 text-[var(--muted)]">
-                          Recommended: 1200 x 900px, 4:3 ratio.
+                          {imageImportStatus || (isImportingImage ? "Importing local image..." : "Recommended: 1200 x 900px, 4:3 ratio.")}
                         </p>
                       </div>
                     </div>
