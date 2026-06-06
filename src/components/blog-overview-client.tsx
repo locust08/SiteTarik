@@ -14,8 +14,8 @@ function RevealIcon({ children }: { children: ReactNode }) {
   );
 }
 
-export function BlogOverviewClient() {
-  const [content, setContent] = useState<BlogCmsContent>(defaultBlogContent);
+export function BlogOverviewClient({ initialContent = defaultBlogContent }: { initialContent?: BlogCmsContent }) {
+  const [content, setContent] = useState<BlogCmsContent>(initialContent);
 
   useEffect(() => {
     const syncContent = () => setContent(readBlogCmsContent());
@@ -29,7 +29,6 @@ export function BlogOverviewClient() {
       }
     };
 
-    syncContent();
     void syncServerContent();
     window.addEventListener("storage", syncContent);
     window.addEventListener("sitetarik-blog-cms-updated", syncContent);

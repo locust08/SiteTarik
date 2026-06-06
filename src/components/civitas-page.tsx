@@ -310,8 +310,10 @@ function Reveal({
 
 function ShowcaseMockup({
   image,
+  title,
 }: {
   image: StaticImageData;
+  title: string;
 }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -340,7 +342,8 @@ function ShowcaseMockup({
       >
         <Image
           src={image}
-          alt="Website showcase image"
+          alt={title}
+          title={title}
           fill
           className="object-cover object-top transition-transform duration-200 ease-out will-change-transform"
           style={{
@@ -541,6 +544,7 @@ export function CivitasPage() {
           <div className="flex items-center justify-between gap-5">
             <Link
               href="#top"
+              title="SiteTarik homepage"
               className="font-[family-name:var(--font-heading)] text-[2rem] font-semibold leading-none tracking-[-0.04em]"
             >
               SiteTarik
@@ -555,6 +559,7 @@ export function CivitasPage() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  title={item.label}
                   className={`relative pb-1 transition ${
                     activeSection === item.href.slice(1)
                       ? headerSolid
@@ -583,6 +588,7 @@ export function CivitasPage() {
             <div className="hidden lg:flex">
               <Link
                 href="#contact"
+                title="Start Upgrade"
                 className={`group inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 ${
                   headerSolid
                     ? "bg-[var(--gold)] text-white hover:bg-[#d81c23]"
@@ -625,6 +631,7 @@ export function CivitasPage() {
               <Link
                 key={item.href}
                 href={item.href}
+                title={item.label}
                 className={`block text-2xl font-semibold ${
                   activeSection === item.href.slice(1)
                     ? "text-[var(--gold-soft)]"
@@ -668,6 +675,7 @@ export function CivitasPage() {
                 </CtaLink>
                 <Link
                   href="#how-it-work"
+                  title="See How It Works"
                   className="inline-flex items-center gap-3 text-sm font-semibold text-white/88 hover:text-[var(--gold-soft)]"
                 >
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/6">
@@ -704,6 +712,7 @@ export function CivitasPage() {
                   <Image
                     src={heroImage}
                     alt="Website upgrade preview"
+                    title="Website upgrade preview"
                     width={1200}
                     height={1200}
                     className="h-auto w-full object-cover"
@@ -749,6 +758,7 @@ export function CivitasPage() {
                   <Image
                     src={stressSectionImage}
                     alt="Website upgrade visual showcase"
+                    title="Website upgrade visual showcase"
                     width={1240}
                     height={980}
                     className="h-auto w-full object-cover"
@@ -941,7 +951,10 @@ export function CivitasPage() {
               {showcasePanels.map((panel, index) => (
                 <Reveal key={`${panel.title}-${panel.theme}`} delay={80 + index * 55}>
                   <article>
-                    <ShowcaseMockup image={panel.image} />
+                    <ShowcaseMockup
+                      image={panel.image}
+                      title={`${panel.title} website upgrade example`}
+                    />
                   </article>
                 </Reveal>
               ))}
@@ -1024,6 +1037,7 @@ export function CivitasPage() {
                 <Image
                   src={pricingImage}
                   alt="Pricing discussion"
+                  title="Pricing discussion"
                   width={1024}
                   height={1024}
                   className="h-full w-full object-cover"

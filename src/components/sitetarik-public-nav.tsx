@@ -23,6 +23,7 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
           <div className="flex items-center justify-between gap-5">
             <Link
               href="/"
+              title="SiteTarik homepage"
               className="font-[family-name:var(--font-heading)] text-[2rem] font-semibold leading-none tracking-[-0.04em]"
             >
               SiteTarik
@@ -33,6 +34,7 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
                 <Link
                   key={item.href}
                   href={item.href}
+                  title={item.label}
                   className={`relative pb-1 transition ${
                     activeKey === item.activeKey ? "text-[var(--gold)]" : "hover:text-[var(--gold)]"
                   }`}
@@ -50,6 +52,7 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
             <div className="hidden lg:flex">
               <Link
                 href="/#contact"
+                title="Start Upgrade"
                 className="group inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23]"
               >
                 Start Upgrade
@@ -82,6 +85,7 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
               <Link
                 key={item.href}
                 href={item.href}
+                title={item.label}
                 className={`block text-2xl font-semibold ${
                   activeKey === item.activeKey ? "text-[var(--gold-soft)]" : ""
                 }`}
@@ -99,4 +103,3 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
     </>
   );
 }
-

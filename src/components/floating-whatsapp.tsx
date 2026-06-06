@@ -36,6 +36,7 @@ export function FloatingWhatsApp() {
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"
+        title="Chat on WhatsApp"
         className="flex items-center"
       >
         <span className="pointer-events-none mr-3 translate-x-2 rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100">

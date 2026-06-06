@@ -35,15 +35,20 @@ export function CtaLink({
   children,
   variant = "soft",
   className = "",
+  title,
 }: {
   href: string;
   children: React.ReactNode;
   variant?: CtaVariant;
   className?: string;
+  title?: string;
 }) {
+  const linkTitle = title ?? (typeof children === "string" ? children : undefined);
+
   return (
     <Link
       href={href}
+      title={linkTitle}
       className={ctaClassName(variant, className)}
     >
       <span className={ctaContentClassName}>

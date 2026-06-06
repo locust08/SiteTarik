@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { defaultBlogContent, type BlogCmsContent } from "@/lib/blog-content";
+import type { BlogCmsContent } from "@/lib/blog-content";
+import { getServerBlogCmsContent } from "@/lib/blog-content-server";
 import { getCmsCloudflareEnv, isCmsWriteAuthorised } from "@/lib/cms-cloudflare";
 
 export const runtime = "nodejs";
@@ -25,30 +26,9 @@ async function ensureContentTable(db: D1Database) {
 }
 
 export async function GET() {
-  try {
-    const { sitetarik_cms: db } = await getCmsCloudflareEnv();
+  const { content } = await getServerBlogCmsContent();
 
-    if (!db) {
-      return NextResponse.json(defaultBlogContent);
-    }
-
-    await ensureContentTable(db);
-
-    const row = (await db
-      .prepare("SELECT content FROM cms_content WHERE id = ?")
-      .bind(contentId)
-      .first()) as { content?: string } | null;
-
-    if (!row?.content) {
-      return NextResponse.json(defaultBlogContent);
-    }
-
-    const content = JSON.parse(row.content);
-
-    return NextResponse.json(isBlogCmsContent(content) ? content : defaultBlogContent);
-  } catch {
-    return NextResponse.json(defaultBlogContent);
-  }
+  return NextResponse.json(content);
 }
 
 export async function PUT(request: Request) {

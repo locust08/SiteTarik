@@ -26,8 +26,14 @@ function Paragraphs({ text }: { text: string }) {
   );
 }
 
-export function BlogPostClient({ slug }: { slug: string }) {
-  const [content, setContent] = useState<BlogCmsContent>(defaultBlogContent);
+export function BlogPostClient({
+  slug,
+  initialContent = defaultBlogContent,
+}: {
+  slug: string;
+  initialContent?: BlogCmsContent;
+}) {
+  const [content, setContent] = useState<BlogCmsContent>(initialContent);
 
   useEffect(() => {
     const syncContent = () => setContent(readBlogCmsContent());
@@ -41,7 +47,6 @@ export function BlogPostClient({ slug }: { slug: string }) {
       }
     };
 
-    syncContent();
     void syncServerContent();
     window.addEventListener("storage", syncContent);
     window.addEventListener("sitetarik-blog-cms-updated", syncContent);
@@ -71,11 +76,15 @@ export function BlogPostClient({ slug }: { slug: string }) {
     );
   }
 
+  const featuredImageTitle = `${post.title} article image`;
+  const ctaLinkTitle = post.ctaButtonText || "Contact SiteTarik";
+
   return (
     <main className="min-h-screen bg-[var(--surface)] px-6 pb-10 pt-[118px] text-[var(--foreground)] sm:px-8 lg:px-10">
       <article className="mx-auto w-full max-w-[920px]">
         <Link
           href="/blog"
+          title="Blog Overview"
           className="group mb-7 mt-3 inline-flex items-center gap-2.5 text-base font-semibold text-[var(--gold)] transition-colors duration-200 hover:text-[#d81c23] sm:mb-8 sm:mt-5"
         >
           <ArrowLeft className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
@@ -83,7 +92,8 @@ export function BlogPostClient({ slug }: { slug: string }) {
         </Link>
         <img
           src={post.featuredImage}
-          alt=""
+          alt={featuredImageTitle}
+          title={featuredImageTitle}
           className="h-[360px] w-full rounded-[8px] bg-[var(--surface-muted)] object-cover sm:h-[440px]"
         />
         <div className="mt-8">
@@ -113,6 +123,7 @@ export function BlogPostClient({ slug }: { slug: string }) {
           <p className="mt-3 max-w-[40rem] text-base leading-7 text-white/74">{post.ctaText}</p>
           <Link
             href={post.ctaHref}
+            title={ctaLinkTitle}
             className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#d81c23]"
           >
             {post.ctaButtonText}

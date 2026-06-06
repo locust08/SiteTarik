@@ -30,6 +30,7 @@ export function CivitasFooter() {
           <div>
             <Link
               href="/"
+              title="SiteTarik homepage"
               className="font-[family-name:var(--font-heading)] text-[2.2rem] font-semibold leading-none tracking-[-0.04em]"
             >
               SiteTarik
@@ -46,7 +47,11 @@ export function CivitasFooter() {
             <ul className="mt-5 space-y-3 text-base text-[rgba(17,17,17,0.72)]">
               {menuLinks.map((item) => (
                 <li key={item.label}>
-                  <Link href={item.href} className="hover:text-[var(--foreground)]">
+                  <Link
+                    href={item.href}
+                    title={item.label}
+                    className="hover:text-[var(--foreground)]"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -66,6 +71,7 @@ export function CivitasFooter() {
                   <Link
                     key={item.label}
                     href={item.href}
+                    title={item.label}
                     className="group flex items-center justify-between rounded-[1rem] border border-[rgba(0,0,0,0.08)] bg-[rgba(255,255,255,0.7)] px-4 py-4 text-[var(--foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.04)] transition-[background-color,border-color,color,transform] duration-200 hover:border-[rgba(0,0,0,0.12)] hover:bg-white"
                   >
                     <span className="flex items-center gap-3">
