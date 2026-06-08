@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Save,
   Trash2,
+  Undo2,
   UserRound,
 } from "lucide-react";
 import {
@@ -42,6 +43,7 @@ import {
   uploadBlogCmsImage,
   writeBlogCmsContent,
 } from "@/lib/blog-storage";
+import { AiEmphasizedParagraphs } from "@/components/blog-ai-emphasis";
 
 const emptySection = (): BlogSection => ({
   id: crypto.randomUUID(),
@@ -541,21 +543,18 @@ const inputClass =
 const cmsPassword = "123";
 const localImagePathPattern = /^[a-zA-Z]:[\\/].+\.(?:avif|gif|jpe?g|png|webp)$/i;
 
-function PreviewParagraphs({ text }: { text: string }) {
-  const paragraphs = text.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
-
-  if (paragraphs.length === 0) {
-    return <p className="mt-3 text-sm leading-6 text-[var(--muted)]/72">Start typing to preview this content.</p>;
-  }
-
+function PreviewParagraphs({ text, maxHighlights = 3 }: { text: string; maxHighlights?: number }) {
   return (
-    <>
-      {paragraphs.map((paragraph, index) => (
-        <p key={`${paragraph}-${index}`} className="mt-3 text-sm leading-6 text-[var(--muted)]">
-          {paragraph}
+    <AiEmphasizedParagraphs
+      text={text}
+      maxHighlights={maxHighlights}
+      paragraphClassName="mt-3 text-sm leading-6 text-[var(--muted)]"
+      emptyState={
+        <p className="mt-3 text-sm leading-6 text-[var(--muted)]/72">
+          Start typing to preview this content.
         </p>
-      ))}
-    </>
+      }
+    />
   );
 }
 
@@ -587,7 +586,9 @@ function BlogLivePreview({
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
             Live Preview
           </p>
-          <p className="mt-1 text-xs font-medium text-[var(--muted)]">Current selected post</p>
+          <p className="mt-1 text-xs font-medium text-[var(--muted)]">
+            AI auto-highlight is shown here
+          </p>
         </div>
         <button
           type="button"
@@ -631,7 +632,7 @@ function BlogLivePreview({
                 <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
                   {section.heading.trim() || "Section heading"}
                 </h2>
-                <PreviewParagraphs text={section.body} />
+                <PreviewParagraphs text={section.body} maxHighlights={3} />
               </section>
             ))}
           </div>
@@ -668,6 +669,7 @@ export function BlogCmsClient() {
   const [imageImportStatus, setImageImportStatus] = useState<string | null>(null);
   const [isImportingImage, setIsImportingImage] = useState(false);
   const [serverSaveStatus, setServerSaveStatus] = useState<string | null>(null);
+  const [undoDepth, setUndoDepth] = useState(0);
   const undoStackRef = useRef<BlogCmsContent[]>([]);
   const hasLoadedServerContentRef = useRef(false);
 
@@ -676,8 +678,15 @@ export function BlogCmsClient() {
     [content.posts, selectedPostId],
   );
 
-  const updateContent = useCallback((nextContent: BlogCmsContent) => {
-    setContent(nextContent);
+  const updateContent = useCallback((nextContent: BlogCmsContent, options?: { remember?: boolean }) => {
+    setContent((currentContent) => {
+      if (options?.remember) {
+        undoStackRef.current = [currentContent, ...undoStackRef.current].slice(0, 20);
+        setUndoDepth(undoStackRef.current.length);
+      }
+
+      return nextContent;
+    });
     writeBlogCmsContent(nextContent);
     setSavedAt(new Date().toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" }));
   }, []);
@@ -742,10 +751,6 @@ export function BlogCmsClient() {
     return () => window.clearTimeout(saveTimer);
   }, [content, isAuthenticated]);
 
-  const rememberUndoState = () => {
-    undoStackRef.current = [content, ...undoStackRef.current].slice(0, 8);
-  };
-
   const restorePreviousContent = useCallback(() => {
     const [previousContent, ...remainingContent] = undoStackRef.current;
 
@@ -754,8 +759,13 @@ export function BlogCmsClient() {
     }
 
     undoStackRef.current = remainingContent;
+    setUndoDepth(remainingContent.length);
     updateContent(previousContent);
-    setSelectedPostId(previousContent.posts[0]?.id ?? "");
+    setSelectedPostId((currentPostId) =>
+      previousContent.posts.some((post) => post.id === currentPostId)
+        ? currentPostId
+        : previousContent.posts[0]?.id ?? "",
+    );
   }, [updateContent]);
 
   useEffect(() => {
@@ -765,6 +775,16 @@ export function BlogCmsClient() {
 
     function handleUndoShortcut(event: KeyboardEvent) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        const target = event.target as HTMLElement | null;
+        const isTextEditing =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          Boolean(target?.isContentEditable);
+
+        if (isTextEditing) {
+          return;
+        }
+
         event.preventDefault();
         restorePreviousContent();
       }
@@ -791,7 +811,7 @@ export function BlogCmsClient() {
 
         return { ...postWithRequiredSection, readTime: estimateReadTime(postWithRequiredSection) };
       }),
-    });
+    }, { remember: true });
   };
 
   const handlePostTitleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -900,21 +920,19 @@ export function BlogCmsClient() {
 
   const addPost = () => {
     const post = createPost();
-    updateContent({ ...content, posts: [post, ...content.posts] });
+    updateContent({ ...content, posts: [post, ...content.posts] }, { remember: true });
     setSelectedPostId(post.id);
   };
 
   const deletePost = (postId: string) => {
-    rememberUndoState();
     const nextPosts = content.posts.filter((post) => post.id !== postId);
-    updateContent({ ...content, posts: nextPosts });
+    updateContent({ ...content, posts: nextPosts }, { remember: true });
     setSelectedPostId(nextPosts[0]?.id ?? "");
   };
 
   const resetContent = () => {
-    rememberUndoState();
     const blankContent = emptyCmsContent();
-    updateContent(blankContent);
+    updateContent(blankContent, { remember: true });
     setSelectedPostId(blankContent.posts[0]?.id ?? "");
   };
 
@@ -1030,6 +1048,19 @@ export function BlogCmsClient() {
             </button>
             <button
               type="button"
+              onClick={restorePreviousContent}
+              disabled={undoDepth === 0}
+              className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--muted)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.18)] hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)] hover:shadow-[0_10px_22px_rgba(0,0,0,0.05)] disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:bg-white disabled:text-[var(--muted)]/35 disabled:hover:shadow-none"
+              aria-label="Undo last CMS change"
+              title="Undo last CMS change"
+            >
+              Undo
+              <RevealIcon>
+                <Undo2 className="h-4 w-4" />
+              </RevealIcon>
+            </button>
+            <button
+              type="button"
               onClick={resetContent}
               className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--muted)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.18)] hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)] hover:shadow-[0_10px_22px_rgba(0,0,0,0.05)]"
             >
@@ -1136,7 +1167,7 @@ export function BlogCmsClient() {
                     updateContent({
                       ...content,
                       overview: { ...content.overview, title: event.target.value },
-                    })
+                    }, { remember: true })
                   }
                 />
                 <CharacterCount value={content.overview.title} limit={characterLimits.pageTitle} />
@@ -1151,7 +1182,7 @@ export function BlogCmsClient() {
                     updateContent({
                       ...content,
                       overview: { ...content.overview, intro: event.target.value },
-                    })
+                    }, { remember: true })
                   }
                 />
                 <CharacterCount value={content.overview.intro} limit={characterLimits.overviewIntro} />

@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { blogCmsStorageKey, defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
 import { fetchBlogCmsContent, readBlogCmsContent } from "@/lib/blog-storage";
+import { AiEmphasizedParagraphs } from "@/components/blog-ai-emphasis";
 
 function RevealIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -14,15 +15,13 @@ function RevealIcon({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Paragraphs({ text }: { text: string }) {
+function Paragraphs({ text, maxHighlights = 3 }: { text: string; maxHighlights?: number }) {
   return (
-    <>
-      {text.split(/\n{2,}/).map((paragraph) => (
-        <p key={paragraph} className="mt-4 text-base leading-8 text-[var(--muted)]">
-          {paragraph}
-        </p>
-      ))}
-    </>
+    <AiEmphasizedParagraphs
+      text={text}
+      maxHighlights={maxHighlights}
+      paragraphClassName="mt-4 text-base leading-8 text-[var(--muted)]"
+    />
   );
 }
 
@@ -113,7 +112,7 @@ export function BlogPostClient({
             <section key={section.id} className="border-b border-[var(--border)] py-8">
               <p className="text-sm font-semibold text-[var(--gold)]">Section {index + 1}</p>
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">{section.heading}</h2>
-              <Paragraphs text={section.body} />
+              <Paragraphs text={section.body} maxHighlights={3} />
             </section>
           ))}
         </div>
