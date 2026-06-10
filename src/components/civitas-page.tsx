@@ -3,11 +3,11 @@
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
-import serviceShowcaseImage from "../../Image/Service Image.webp";
-import educationShowcaseImage from "../../Image/Education Image.webp";
-import homeLivingShowcaseImage from "../../Image/Home Living Image.webp";
-import localSmeShowcaseImage from "../../Image/SME Image.webp";
-import heroImage from "../../Image/Hero Image.webp";
+import serviceShowcaseImage from "../../Image/Clean House Website.png";
+import educationShowcaseImage from "../../Image/University Website.png";
+import homeLivingShowcaseImage from "../../Image/SamadDesigns Website.png";
+import localSmeShowcaseImage from "../../Image/SamadPaip Website.png";
+import heroImage from "../../Image/SiteTarik Hero Image Cutout.png";
 import pricingImage from "../../Image/Pricing Image.webp";
 import stressSectionImage from "../../Image/Stress Section.webp";
 import {
@@ -359,7 +359,7 @@ function ShowcaseMockup({
 
 export function CivitasPage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState(-1);
   const [openService, setOpenService] = useState<number | null>(null);
   const [headerSolid, setHeaderSolid] = useState(false);
   const [activeSection, setActiveSection] = useState("top");
@@ -702,7 +702,7 @@ export function CivitasPage() {
 
             <Reveal delay={150} className="relative">
               <div className="relative mx-auto w-full max-w-[620px]">
-                <div className="relative overflow-hidden rounded-[1.5rem] shadow-[0_22px_56px_rgba(8,8,10,0.16)] sm:rounded-[2.1rem]">
+                <div className="relative">
                   <div className="absolute left-4 top-4 z-10 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
                     Before
                   </div>
@@ -713,9 +713,9 @@ export function CivitasPage() {
                     src={heroImage}
                     alt="Website upgrade preview"
                     title="Website upgrade preview"
-                    width={1200}
-                    height={1200}
-                    className="h-auto w-full object-cover"
+                    width={1254}
+                    height={1254}
+                    className="h-auto w-full object-contain drop-shadow-[0_22px_56px_rgba(8,8,10,0.16)]"
                     sizes="(max-width: 1024px) calc(100vw - 40px), 620px"
                     priority
                   />

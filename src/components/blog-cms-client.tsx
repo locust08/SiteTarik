@@ -51,6 +51,9 @@ const emptySection = (): BlogSection => ({
   body: "",
 });
 
+const customCtaButtonOption = "Other CTA";
+const customCtaTitleOption = "Custom CTA Title";
+
 const ctaOptions = [
   "WhatsApp us",
   "Get a quote",
@@ -60,7 +63,7 @@ const ctaOptions = [
   "Claim offer",
   "Learn more",
   "Contact us",
-  "Other CTA",
+  customCtaButtonOption,
 ];
 
 const ctaTitleOptions = [
@@ -72,7 +75,7 @@ const ctaTitleOptions = [
   "Ready to Claim This Offer?",
   "Ready to Learn More?",
   "Ready to Contact Us?",
-  "Custom CTA Title",
+  customCtaTitleOption,
 ];
 
 const characterLimits = {
@@ -85,6 +88,8 @@ const characterLimits = {
   simpleIntro: 650,
   sectionHeading: 80,
   sectionBody: 1400,
+  ctaTitle: 90,
+  ctaButtonText: 40,
   ctaText: 180,
   ctaLink: 500,
 };
@@ -677,6 +682,17 @@ export function BlogCmsClient() {
     () => content.posts.find((post) => post.id === selectedPostId) ?? content.posts[0],
     [content.posts, selectedPostId],
   );
+  const isCustomCtaTitle =
+    !!selectedPost &&
+    (selectedPost.ctaTitle === customCtaTitleOption ||
+      (selectedPost.ctaTitle.trim() !== "" && !ctaTitleOptions.includes(selectedPost.ctaTitle)));
+  const isCustomCtaButtonText =
+    !!selectedPost &&
+    (selectedPost.ctaButtonText === customCtaButtonOption ||
+      (selectedPost.ctaButtonText.trim() !== "" && !ctaOptions.includes(selectedPost.ctaButtonText)));
+  const customCtaTitleValue = selectedPost?.ctaTitle === customCtaTitleOption ? "" : selectedPost?.ctaTitle ?? "";
+  const customCtaButtonTextValue =
+    selectedPost?.ctaButtonText === customCtaButtonOption ? "" : selectedPost?.ctaButtonText ?? "";
 
   const updateContent = useCallback((nextContent: BlogCmsContent, options?: { remember?: boolean }) => {
     setContent((currentContent) => {
@@ -1274,13 +1290,13 @@ export function BlogCmsClient() {
                 </Field>
                 <div className="md:col-span-2">
                   <Field label="Blog Image URL or Attachment" required>
-                    <div className="grid gap-5 rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-strong)] p-4 md:grid-cols-[220px_1fr]">
-                      <div className="overflow-hidden rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface-muted)] shadow-[0_8px_18px_rgba(0,0,0,0.04)]">
+                    <div className="grid items-start gap-5 rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-strong)] p-4 md:grid-cols-[220px_1fr]">
+                      <div className="aspect-[4/3] overflow-hidden rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface-muted)] shadow-[0_8px_18px_rgba(0,0,0,0.04)]">
                         {selectedPost.featuredImage && failedImagePreview !== selectedPost.featuredImage ? (
                           <img
                             src={selectedPost.featuredImage}
                             alt=""
-                            className="aspect-[4/3] w-full object-cover"
+                            className="h-full w-full object-cover"
                             onError={() => setFailedImagePreview(selectedPost.featuredImage)}
                           />
                         ) : (
@@ -1424,22 +1440,58 @@ export function BlogCmsClient() {
 
               <div className="mt-7 grid gap-5 border-t border-[var(--border)] pt-6 md:grid-cols-2">
                 <Field label="CTA Title" required>
-                  <CmsSelectControl
-                    value={selectedPost.ctaTitle}
-                    options={ctaTitleOptions}
-                    label="CTA Title"
-                    placeholder="Select CTA title"
-                    onChange={(value) => updatePost(selectedPost.id, { ctaTitle: value })}
-                  />
+                  <div className="grid gap-3">
+                    <CmsSelectControl
+                      value={selectedPost.ctaTitle}
+                      options={ctaTitleOptions}
+                      label="CTA Title"
+                      placeholder="Select CTA title"
+                      onChange={(value) => updatePost(selectedPost.id, { ctaTitle: value })}
+                    />
+                    {isCustomCtaTitle ? (
+                      <div>
+                        <input
+                          className={inputClass}
+                          maxLength={characterLimits.ctaTitle}
+                          value={customCtaTitleValue}
+                          onChange={(event) =>
+                            updatePost(selectedPost.id, {
+                              ctaTitle: event.target.value || customCtaTitleOption,
+                            })
+                          }
+                          placeholder="Enter custom CTA title"
+                        />
+                        <CharacterCount value={customCtaTitleValue} limit={characterLimits.ctaTitle} />
+                      </div>
+                    ) : null}
+                  </div>
                 </Field>
                 <Field label="CTA Button Text" required>
-                  <CmsSelectControl
-                    value={selectedPost.ctaButtonText}
-                    options={ctaOptions}
-                    label="CTA Button Text"
-                    placeholder="Select CTA button"
-                    onChange={(value) => updatePost(selectedPost.id, { ctaButtonText: value })}
-                  />
+                  <div className="grid gap-3">
+                    <CmsSelectControl
+                      value={selectedPost.ctaButtonText}
+                      options={ctaOptions}
+                      label="CTA Button Text"
+                      placeholder="Select CTA button"
+                      onChange={(value) => updatePost(selectedPost.id, { ctaButtonText: value })}
+                    />
+                    {isCustomCtaButtonText ? (
+                      <div>
+                        <input
+                          className={inputClass}
+                          maxLength={characterLimits.ctaButtonText}
+                          value={customCtaButtonTextValue}
+                          onChange={(event) =>
+                            updatePost(selectedPost.id, {
+                              ctaButtonText: event.target.value || customCtaButtonOption,
+                            })
+                          }
+                          placeholder="Enter custom CTA button text"
+                        />
+                        <CharacterCount value={customCtaButtonTextValue} limit={characterLimits.ctaButtonText} />
+                      </div>
+                    ) : null}
+                  </div>
                 </Field>
                 <Field label="CTA Text" required>
                   <AutoGrowTextarea
