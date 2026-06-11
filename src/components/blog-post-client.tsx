@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { blogCmsStorageKey, defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
+import {
+  blogCmsStorageKey,
+  defaultBlogContent,
+  formatBlogDate,
+  isVisiblePublishedBlogPost,
+  type BlogCmsContent,
+} from "@/lib/blog-content";
 import { fetchBlogCmsContent, readBlogCmsContent } from "@/lib/blog-storage";
 import { AiEmphasizedParagraphs } from "@/components/blog-ai-emphasis";
 
@@ -56,7 +62,7 @@ export function BlogPostClient({
     };
   }, []);
 
-  const post = content.posts.find((item) => item.slug === slug && item.status === "published");
+  const post = content.posts.find((item) => item.slug === slug && isVisiblePublishedBlogPost(item));
 
   if (!post) {
     return (

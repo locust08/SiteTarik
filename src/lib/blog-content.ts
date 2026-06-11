@@ -32,6 +32,13 @@ export type BlogCmsContent = {
   posts: BlogPost[];
 };
 
+const malaysiaDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Kuala_Lumpur",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 export const blogCmsStorageKey = "sitetarik_blog_cms_content_v1";
 
 export const defaultBlogContent: BlogCmsContent = {
@@ -105,6 +112,23 @@ export function formatBlogDate(dateValue: string) {
     month: "long",
     year: "numeric",
   }).format(date);
+}
+
+export function getMalaysiaDateKey(date = new Date()) {
+  const parts = malaysiaDateFormatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  return year && month && day ? `${year}-${month}-${day}` : date.toISOString().slice(0, 10);
+}
+
+export function isVisiblePublishedBlogPost(post: BlogPost, todayKey = getMalaysiaDateKey()) {
+  return (
+    post.status === "published" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(post.publishDate) &&
+    post.publishDate <= todayKey
+  );
 }
 
 export function normalizeSlug(value: string) {

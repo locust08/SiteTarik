@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { sitemapLastModified } from "@/generated/sitemap-last-modified";
 import { getServerBlogCmsContent } from "@/lib/blog-content-server";
+import { isVisiblePublishedBlogPost } from "@/lib/blog-content";
 
 const SITE_URL_FALLBACK = "https://sitetarik.com";
 
@@ -36,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteLastModified = new Date(sitemapLastModified);
   const { content, updatedAt } = await getServerBlogCmsContent();
   const publishedPosts = content.posts
-    .filter((post) => post.status === "published" && post.slug.trim())
+    .filter((post) => isVisiblePublishedBlogPost(post) && post.slug.trim())
     .sort((a, b) => b.publishDate.localeCompare(a.publishDate));
   const blogLastModified = getValidDate(updatedAt ?? publishedPosts[0]?.publishDate, siteLastModified);
 

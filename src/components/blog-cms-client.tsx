@@ -41,6 +41,7 @@ import {
   readBlogCmsContent,
   saveBlogCmsContent,
   uploadBlogCmsImage,
+  verifyBlogCmsPassword,
   writeBlogCmsContent,
 } from "@/lib/blog-storage";
 import { AiEmphasizedParagraphs } from "@/components/blog-ai-emphasis";
@@ -545,7 +546,6 @@ function CmsSelectControl({
 
 const inputClass =
   "min-h-[52px] w-full rounded-[1rem] border border-[var(--border)] bg-white px-4 py-3.5 text-[15px] leading-6 text-[var(--foreground)] outline-none placeholder:text-[0.92rem] placeholder:text-[var(--muted)]/72 focus:border-[var(--gold)]";
-const cmsPassword = "123";
 const localImagePathPattern = /^[a-zA-Z]:[\\/].+\.(?:avif|gif|jpe?g|png|webp)$/i;
 
 function PreviewParagraphs({ text, maxHighlights = 3 }: { text: string; maxHighlights?: number }) {
@@ -668,6 +668,7 @@ export function BlogCmsClient() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoginPending, setIsLoginPending] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
   const [failedImagePreview, setFailedImagePreview] = useState<string | null>(null);
@@ -757,7 +758,7 @@ export function BlogCmsClient() {
 
     const saveTimer = window.setTimeout(() => {
       setServerSaveStatus("Saving to cloud...");
-      saveBlogCmsContent(content, cmsPassword)
+      saveBlogCmsContent(content)
         .then(() => setServerSaveStatus("Saved to cloud."))
         .catch((error) =>
           setServerSaveStatus(error instanceof Error ? error.message : "Could not save to cloud."),
@@ -857,7 +858,7 @@ export function BlogCmsClient() {
     setImageImportStatus("Uploading image to cloud...");
 
     try {
-      const imageValue = await uploadBlogCmsImage(file, cmsPassword);
+      const imageValue = await uploadBlogCmsImage(file);
       setFailedImagePreview(null);
       setImageImportStatus("Image uploaded and ready to preview.");
       updatePost(selectedPost.id, {
@@ -952,17 +953,21 @@ export function BlogCmsClient() {
     setSelectedPostId(blankContent.posts[0]?.id ?? "");
   };
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (password === cmsPassword) {
-      setIsAuthenticated(true);
-      setAuthError(null);
-      setPassword("");
-      return;
-    }
+    setIsLoginPending(true);
+    setAuthError(null);
 
-    setAuthError("Password incorrect. Please try again.");
+    try {
+      await verifyBlogCmsPassword(password);
+      setIsAuthenticated(true);
+      setPassword("");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Password incorrect. Please try again.");
+    } finally {
+      setIsLoginPending(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -1013,9 +1018,10 @@ export function BlogCmsClient() {
             ) : null}
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[background-color,box-shadow,color] duration-200 hover:bg-[#d81c23] hover:shadow-[0_14px_28px_rgba(238,32,40,0.16)]"
+              disabled={isLoginPending}
+              className="inline-flex items-center justify-center rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[background-color,box-shadow,color] duration-200 hover:bg-[#d81c23] hover:shadow-[0_14px_28px_rgba(238,32,40,0.16)] disabled:cursor-not-allowed disabled:bg-[var(--muted)] disabled:shadow-none"
             >
-              Unlock CMS
+              {isLoginPending ? "Checking..." : "Unlock CMS"}
             </button>
           </form>
         </section>

@@ -1,11 +1,16 @@
 import { createHash } from "node:crypto";
-import { mkdir, stat, copyFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse, type NextRequest } from "next/server";
+import { isCmsWriteAuthorised } from "@/lib/cms-cloudflare";
+import {
+  assertSafeUploadedImage,
+  ImageUploadValidationError,
+  isAllowedImageExtension,
+} from "@/lib/image-upload-security";
 
 export const runtime = "nodejs";
 
-const allowedExtensions = new Set([".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"]);
 const maxImageSize = 12 * 1024 * 1024;
 
 function isLocalRequest(request: NextRequest) {
@@ -14,7 +19,7 @@ function isLocalRequest(request: NextRequest) {
   return host.startsWith("127.0.0.1") || host.startsWith("localhost");
 }
 
-function toSafeFileName(filePath: string) {
+function toSafeFileName(filePath: string, extension: string) {
   const parsed = path.parse(filePath);
   const baseName = parsed.name
     .toLowerCase()
@@ -23,12 +28,16 @@ function toSafeFileName(filePath: string) {
     .slice(0, 54);
   const hash = createHash("sha1").update(filePath).digest("hex").slice(0, 10);
 
-  return `${baseName || "blog-image"}-${hash}${parsed.ext.toLowerCase()}`;
+  return `${baseName || "blog-image"}-${hash}.${extension}`;
 }
 
 export async function POST(request: NextRequest) {
   if (!isLocalRequest(request)) {
     return NextResponse.json({ error: "Local image import only works on localhost." }, { status: 403 });
+  }
+
+  if (!isCmsWriteAuthorised(request)) {
+    return NextResponse.json({ error: "Unauthorised image import." }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => null)) as { filePath?: unknown } | null;
@@ -40,8 +49,8 @@ export async function POST(request: NextRequest) {
 
   const extension = path.extname(filePath).toLowerCase();
 
-  if (!allowedExtensions.has(extension)) {
-    return NextResponse.json({ error: "Only common image files can be imported." }, { status: 400 });
+  if (!isAllowedImageExtension(extension)) {
+    return NextResponse.json({ error: "Only JPG, PNG, or WebP images can be imported." }, { status: 400 });
   }
 
   const fileStat = await stat(filePath).catch(() => null);
@@ -54,12 +63,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Image is too large. Please use an image under 12MB." }, { status: 413 });
   }
 
+  const bytes = await readFile(filePath);
+  let imageDetails: ReturnType<typeof assertSafeUploadedImage>;
+
+  try {
+    imageDetails = assertSafeUploadedImage(bytes);
+  } catch (error) {
+    if (error instanceof ImageUploadValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    throw error;
+  }
+
   const uploadDir = path.join(process.cwd(), "public", "Image", "blog-uploads");
-  const fileName = toSafeFileName(filePath);
+  const fileName = toSafeFileName(filePath, imageDetails.extension);
   const targetPath = path.join(uploadDir, fileName);
 
   await mkdir(uploadDir, { recursive: true });
-  await copyFile(filePath, targetPath);
+  await writeFile(targetPath, bytes);
 
   return NextResponse.json({ imageUrl: `/Image/blog-uploads/${fileName}` });
 }

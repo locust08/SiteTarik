@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { blogCmsStorageKey, defaultBlogContent, formatBlogDate, type BlogCmsContent } from "@/lib/blog-content";
+import {
+  blogCmsStorageKey,
+  defaultBlogContent,
+  formatBlogDate,
+  isVisiblePublishedBlogPost,
+  type BlogCmsContent,
+} from "@/lib/blog-content";
 import { fetchBlogCmsContent, readBlogCmsContent } from "@/lib/blog-storage";
 
 function RevealIcon({ children }: { children: ReactNode }) {
@@ -40,7 +46,7 @@ export function BlogOverviewClient({ initialContent = defaultBlogContent }: { in
   }, []);
 
   const posts = content.posts
-    .filter((post) => post.status === "published")
+    .filter((post) => isVisiblePublishedBlogPost(post))
     .sort((a, b) => b.publishDate.localeCompare(a.publishDate));
 
   return (

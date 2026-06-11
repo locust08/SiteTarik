@@ -4,6 +4,7 @@ import { BlogPostClient } from "@/components/blog-post-client";
 import { CivitasFooter } from "@/components/civitas-footer";
 import { SiteTarikPublicNav } from "@/components/sitetarik-public-nav";
 import { getServerBlogCmsContent } from "@/lib/blog-content-server";
+import { isVisiblePublishedBlogPost } from "@/lib/blog-content";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const { content } = await getServerBlogCmsContent();
-  const post = content.posts.find((item) => item.slug === slug && item.status === "published");
+  const post = content.posts.find((item) => item.slug === slug && isVisiblePublishedBlogPost(item));
 
   if (!post) {
     return fallbackMetadata;
@@ -37,7 +38,7 @@ export default async function BlogPostPage({
 }) {
   const { slug } = await params;
   const { content } = await getServerBlogCmsContent();
-  const post = content.posts.find((item) => item.slug === slug && item.status === "published");
+  const post = content.posts.find((item) => item.slug === slug && isVisiblePublishedBlogPost(item));
 
   if (!post) {
     notFound();

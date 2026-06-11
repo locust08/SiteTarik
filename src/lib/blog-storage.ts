@@ -73,12 +73,26 @@ export async function fetchBlogCmsContent() {
   return isBlogCmsContent(content) ? normaliseBlogCmsContent(content) : defaultBlogContent;
 }
 
-export async function saveBlogCmsContent(content: BlogCmsContent, password: string) {
+export async function verifyBlogCmsPassword(password: string) {
+  const response = await fetch("/api/cms/session", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const result = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(result?.error || "Password incorrect. Please try again.");
+  }
+}
+
+export async function saveBlogCmsContent(content: BlogCmsContent) {
   const response = await fetch("/api/cms/content", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "x-cms-password": password,
     },
     body: JSON.stringify(content),
   });
@@ -89,15 +103,12 @@ export async function saveBlogCmsContent(content: BlogCmsContent, password: stri
   }
 }
 
-export async function uploadBlogCmsImage(file: File, password: string) {
+export async function uploadBlogCmsImage(file: File) {
   const formData = new FormData();
   formData.set("image", file);
 
   const response = await fetch("/api/cms/upload-image", {
     method: "POST",
-    headers: {
-      "x-cms-password": password,
-    },
     body: formData,
   });
 
