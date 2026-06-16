@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CtaLink } from "@/components/cta-link";
+import { siteStickyHeaderClassName } from "@/lib/site-header";
 
 const navItems = [
   { label: "Pricing", href: "/#pricing" },
@@ -12,7 +13,7 @@ const navItems = [
 export function CivitasHeader({ solid = false }: { solid?: boolean }) {
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-40 border-b border-black/8 ${
+      className={`${siteStickyHeaderClassName} border-b border-black/8 ${
         solid
           ? "bg-[rgba(255,255,255,0.94)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]"
           : "bg-[rgba(255,255,255,0.88)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]"

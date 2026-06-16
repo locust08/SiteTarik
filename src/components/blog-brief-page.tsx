@@ -14,6 +14,7 @@ import {
   dispatchSiteTarikAnalyticsEvent,
   readTrackingSnapshotFromBrowser,
 } from "@/lib/tracking/browser";
+import { siteStickyHeaderClassName } from "@/lib/site-header";
 
 type BlogBriefForm = {
   briefBusinessDescription: string;
@@ -946,7 +947,7 @@ export function BlogBriefPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[var(--surface)] text-[var(--foreground)]">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-black/8 bg-[rgba(255,255,255,0.92)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+      <header className={`${siteStickyHeaderClassName} border-b border-black/8 bg-[rgba(255,255,255,0.92)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]`}>
         <div className="mx-auto flex w-full max-w-[1230px] items-center justify-between px-5 py-7 sm:px-7 lg:px-6">
           <Link
             href="/"

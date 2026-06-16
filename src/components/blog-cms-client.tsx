@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  CalendarDays,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -1139,14 +1140,20 @@ export function BlogCmsClient() {
                   <span className="block min-w-0 max-w-full text-sm font-semibold leading-6 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [overflow:hidden]">
                     {post.title || "Untitled blog post"}
                   </span>
-                  <span
-                    className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                      post.status === "published"
-                        ? "border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#16803a]"
-                        : "border-[rgba(238,32,40,0.14)] bg-white text-[var(--muted)]"
-                    }`}
-                  >
-                    {post.status}
+                  <span className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,0,0,0.06)] bg-white/70 px-2.5 py-1 text-[11px] font-semibold leading-none text-[var(--muted)] shadow-[0_4px_10px_rgba(0,0,0,0.03)]">
+                      <CalendarDays className="h-3.5 w-3.5 text-[var(--gold)]/75" />
+                      {post.publishDate ? formatBlogDate(post.publishDate) : "No publish date set"}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.14em] ${
+                        post.status === "published"
+                          ? "border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#16803a]"
+                          : "border-[rgba(238,32,40,0.14)] bg-white text-[var(--muted)]"
+                      }`}
+                    >
+                      {post.status}
+                    </span>
                   </span>
                 </button>
               ))

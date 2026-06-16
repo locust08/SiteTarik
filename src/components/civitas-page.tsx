@@ -32,6 +32,7 @@ import { CivitasFooter } from "@/components/civitas-footer";
 import { CtaLink } from "@/components/cta-link";
 import { WebsiteSubmissionSection } from "@/components/website-submission-section";
 import { getSiteTarikPackageTitle } from "@/lib/order-flow";
+import { siteStickyHeaderClassName } from "@/lib/site-header";
 import {
   buildBrowserTrackingMetadata,
   dispatchSiteTarikAnalyticsEvent,
@@ -534,7 +535,7 @@ export function CivitasPage() {
   return (
     <div className="overflow-x-hidden bg-[var(--surface)] text-[var(--foreground)]">
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,color,box-shadow] duration-300 ${
+        className={`${siteStickyHeaderClassName} transition-[background-color,border-color,color,box-shadow] duration-300 ${
           headerSolid
             ? "border-b border-black/8 bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)]"
             : "border-b border-white/8 bg-transparent text-white"

@@ -23,6 +23,7 @@ import {
   dispatchSiteTarikAnalyticsEvent,
   readTrackingSnapshotFromBrowser,
 } from "@/lib/tracking/browser";
+import { siteStickyHeaderClassName } from "@/lib/site-header";
 
 type ReceiptData = {
   fullName: string;
@@ -684,7 +685,7 @@ export function ThankYouPage({
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[var(--surface)]">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-black/8 bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)] transition-[background-color,border-color,color,box-shadow] duration-300">
+      <header className={`${siteStickyHeaderClassName} border-b border-black/8 bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.04)] transition-[background-color,border-color,color,box-shadow] duration-300`}>
         <div className="mx-auto w-full max-w-[1230px] px-5 py-7 sm:px-7 lg:px-6">
           <div className="flex items-center">
             <Link
