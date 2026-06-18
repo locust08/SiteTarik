@@ -33,7 +33,6 @@ import {
   defaultBlogContent,
   formatBlogDate,
   normalizeSlug,
-  type BlogCmsContent,
   type BlogPost,
   type BlogSection,
 } from "@/lib/blog-content";
@@ -127,11 +126,6 @@ const createPost = (): BlogPost => ({
   ctaText: "",
   ctaButtonText: "",
   ctaHref: "",
-});
-
-const emptyCmsContent = (): BlogCmsContent => ({
-  overview: defaultBlogContent.overview,
-  posts: [createPost()],
 });
 
 function Field({
@@ -948,10 +942,20 @@ export function BlogCmsClient() {
     setSelectedPostId(nextPosts[0]?.id ?? "");
   };
 
-  const resetContent = () => {
-    const blankContent = emptyCmsContent();
-    updateContent(blankContent, { remember: true });
-    setSelectedPostId(blankContent.posts[0]?.id ?? "");
+  const resetSelectedPost = () => {
+    if (!selectedPost) {
+      return;
+    }
+
+    const blankPost = {
+      ...createPost(),
+      id: selectedPost.id,
+    };
+
+    updateContent({
+      ...content,
+      posts: content.posts.map((post) => (post.id === selectedPost.id ? blankPost : post)),
+    }, { remember: true });
   };
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -1033,8 +1037,12 @@ export function BlogCmsClient() {
   return (
     <main className="dashboard-enter min-h-screen bg-[var(--surface)] pb-10 pt-8 text-[var(--foreground)]">
         <div className={`mx-auto flex flex-col gap-5 px-5 pb-3 transition-[max-width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-7 lg:px-6 ${isPreviewOpen ? "max-w-[1680px]" : "max-w-[1230px]"}`}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className={`grid gap-4 lg:items-end ${
+          isPreviewOpen
+            ? "lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)_minmax(360px,430px)]"
+            : "lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)_minmax(0,0px)]"
+        }`}>
+          <div className="lg:col-[1/3] lg:row-start-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">
               Payload Lite
             </p>
@@ -1042,7 +1050,7 @@ export function BlogCmsClient() {
               SiteTarik Blog CMS
             </h1>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 lg:col-[2/3] lg:row-start-1 lg:justify-self-end lg:pr-4 xl:pr-6">
             <Link
               href="/blog"
               className="group inline-flex items-center gap-2 rounded-full border border-[rgba(238,32,40,0.16)] bg-[var(--surface-strong)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.22)] hover:bg-[var(--gold-soft)] hover:shadow-[0_12px_26px_rgba(0,0,0,0.06)]"
@@ -1084,10 +1092,11 @@ export function BlogCmsClient() {
             </button>
             <button
               type="button"
-              onClick={resetContent}
-              className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--muted)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.18)] hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)] hover:shadow-[0_10px_22px_rgba(0,0,0,0.05)]"
+              onClick={resetSelectedPost}
+              disabled={!selectedPost}
+              className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--muted)] transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-[rgba(238,32,40,0.18)] hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)] hover:shadow-[0_10px_22px_rgba(0,0,0,0.05)] disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:bg-white disabled:text-[var(--muted)]/35 disabled:hover:shadow-none"
             >
-              Reset
+              Reset Post
               <RevealIcon>
                 <RotateCcw className="h-4 w-4" />
               </RevealIcon>

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
 
-const whatsappHref =
-  "https://wa.me/60129044583?text=Could%20we%20schedule%20a%20customized%20Digital%20Marketing%20Strategy%20session%20for%20my%20business%3F";
+const whatsappHref = SITE_TARIK_CHATBOT_WHATSAPP_URL;
 
 function WhatsAppIcon() {
   return (

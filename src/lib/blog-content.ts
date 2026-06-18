@@ -1,3 +1,5 @@
+import { SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
+
 export type BlogOverviewContent = {
   title: string;
   intro: string;
@@ -95,7 +97,7 @@ export const defaultBlogContent: BlogCmsContent = {
       ctaTitle: "Ready to Get More Enquiries?",
       ctaText: "Make it easier for customers to understand your business and contact you.",
       ctaButtonText: "WhatsApp Us",
-      ctaHref: "https://wa.me/60123456789",
+      ctaHref: SITE_TARIK_CHATBOT_WHATSAPP_URL,
     },
   ],
 };

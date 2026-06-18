@@ -24,6 +24,7 @@ import {
   readTrackingSnapshotFromBrowser,
 } from "@/lib/tracking/browser";
 import { siteStickyHeaderClassName } from "@/lib/site-header";
+import { SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
 
 type ReceiptData = {
   fullName: string;
@@ -712,7 +713,7 @@ export function ThankYouPage({
               <p className="max-w-[28rem] text-base leading-7 text-[var(--muted)] sm:text-lg">
                 Preparing your website handoff for final delivery on WhatsApp.{" "}
                 <Link
-                  href="https://wa.me/60123456789"
+                  href={SITE_TARIK_CHATBOT_WHATSAPP_URL}
                   target="_blank"
                   rel="noreferrer"
                   onClick={handleWhatsAppClick}
@@ -850,7 +851,7 @@ export function ThankYouPage({
 
             <div className="mt-3 flex flex-col gap-3">
               <Link
-                href="https://wa.me/60123456789"
+                href={SITE_TARIK_CHATBOT_WHATSAPP_URL}
                 target="_blank"
                 rel="noreferrer"
                 onClick={handleWhatsAppClick}

@@ -3,6 +3,9 @@ type WhatsAppHrefOptions = {
   fallbackHref: string;
 };
 
+export const SITE_TARIK_CHATBOT_WHATSAPP_URL =
+  "https://sitetarik-chatbot-v2.easondev.workers.dev/wa/sitetarik";
+
 function normalizeWhatsAppNumber(value: string) {
   return value.replace(/[^\d]/g, "");
 }

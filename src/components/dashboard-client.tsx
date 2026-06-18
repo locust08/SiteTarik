@@ -317,29 +317,6 @@ function DashboardLoadingState({ stage }: { stage: (typeof dashboardLoadingStage
   );
 }
 
-function DashboardReadyState() {
-  return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_24%),linear-gradient(180deg,rgba(8,8,8,0.98)_0%,rgba(18,18,18,0.98)_100%)] px-6">
-      <div className="absolute inset-0 backdrop-blur-2xl" />
-      <div className="absolute inset-0 bg-black/35" />
-      <div className="relative z-10 flex w-full max-w-[28rem] flex-col items-center rounded-[2rem] border border-white/10 bg-white/8 px-8 py-10 text-center text-white shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full border border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.12)] text-[#22c55e] shadow-[0_18px_40px_rgba(0,0,0,0.3)]">
-          <CheckCircle2 className="h-10 w-10 animate-pulse" />
-        </div>
-        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
-          Dashboard ready
-        </p>
-        <h1 className="mt-3 font-[family-name:var(--font-heading)] text-[2.5rem] leading-[1] tracking-[-0.05em]">
-          Ngam!
-        </h1>
-        <p className="mt-3 max-w-[18rem] text-sm leading-7 text-white/72">
-          Stripe data is verified. Your decision view is ready.
-        </p>
-      </div>
-    </main>
-  );
-}
-
 function polarToCartesian(center: number, radius: number, angleInDegrees: number) {
   const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
 
@@ -611,8 +588,8 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [hasLoginUnlocked, setHasLoginUnlocked] = useState(false);
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
-  const [isConfirmingLoad, setIsConfirmingLoad] = useState(false);
   const [visibleOrderCount, setVisibleOrderCount] = useState(tablePageSize);
   const [isSearchApplying, setIsSearchApplying] = useState(false);
   const [isTableExpanding, setIsTableExpanding] = useState(false);
@@ -621,7 +598,6 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
   const [isResetting, setIsResetting] = useState(false);
   const hasPresentedDashboardRef = useRef(false);
   const skipNextDashboardFetchRef = useRef(false);
-  const confirmingTimerRef = useRef<number | null>(null);
   const searchTimerRef = useRef<number | null>(null);
   const tableExpandTimerRef = useRef<number | null>(null);
   const tableCollapseTimerRef = useRef<number | null>(null);
@@ -644,9 +620,6 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
 
   useEffect(() => {
     return () => {
-      if (confirmingTimerRef.current) {
-        window.clearTimeout(confirmingTimerRef.current);
-      }
       if (searchTimerRef.current) {
         window.clearTimeout(searchTimerRef.current);
       }
@@ -682,21 +655,12 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
     };
   }, [isLoading, queryString]);
 
-  const showReadyConfirmation = () => {
+  const markDashboardPresented = () => {
     if (hasPresentedDashboardRef.current) {
       return;
     }
 
-    setIsConfirmingLoad(true);
-    if (confirmingTimerRef.current) {
-      window.clearTimeout(confirmingTimerRef.current);
-    }
-
-    confirmingTimerRef.current = window.setTimeout(() => {
-      hasPresentedDashboardRef.current = true;
-      setIsConfirmingLoad(false);
-      confirmingTimerRef.current = null;
-    }, 950);
+    hasPresentedDashboardRef.current = true;
   };
 
   useEffect(() => {
@@ -716,7 +680,6 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
       const loadStartedAt = Date.now();
       setIsLoading(true);
       setError("");
-      setIsConfirmingLoad(false);
 
       try {
         const response = await fetch(`/api/dashboard/orders${queryString ? `?${queryString}` : ""}`, {
@@ -744,11 +707,10 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
         if (!cancelled) {
           setNeedsLogin(false);
           setPayload(result as DashboardPayload);
-          showReadyConfirmation();
+          markDashboardPresented();
         }
       } catch (loadError) {
         if (!cancelled) {
-          setIsConfirmingLoad(false);
           setError(loadError instanceof Error ? loadError.message : "Could not load dashboard data.");
         }
       } finally {
@@ -797,6 +759,7 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoggingIn(true);
+    setHasLoginUnlocked(false);
     setLoginError("");
 
     try {
@@ -831,10 +794,12 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
 
       setPayload(data as DashboardPayload);
       skipNextDashboardFetchRef.current = true;
+      markDashboardPresented();
+      setHasLoginUnlocked(true);
+      await wait(620);
       setNeedsLogin(false);
-      showReadyConfirmation();
     } catch (loginFailure) {
-      setIsConfirmingLoad(false);
+      setHasLoginUnlocked(false);
       setLoginError(loginFailure instanceof Error ? loginFailure.message : "Password incorrect. Please try again.");
     } finally {
       setIsLoggingIn(false);
@@ -948,10 +913,15 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
 
             <button
               type="submit"
-              disabled={isLoggingIn}
+              disabled={isLoggingIn || hasLoginUnlocked}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[background-color,box-shadow,color] duration-200 hover:bg-[#d81c23] hover:shadow-[0_14px_28px_rgba(238,32,40,0.16)] disabled:cursor-not-allowed disabled:bg-[var(--muted)] disabled:shadow-none"
             >
-              {isLoggingIn ? (
+              {hasLoginUnlocked ? (
+                <>
+                  Unlocking
+                  <CheckCircle2 className="h-4 w-4 text-[#22c55e]" />
+                </>
+              ) : isLoggingIn ? (
                 <>
                   Unlocking
                   <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -968,10 +938,6 @@ export function DashboardClient({ initialNeedsLogin = false }: { initialNeedsLog
 
   if (isLoading && !payload && !error) {
     return <DashboardLoadingState stage={activeLoadingStage} />;
-  }
-
-  if (isConfirmingLoad && payload && !error) {
-    return <DashboardReadyState />;
   }
 
   return (
