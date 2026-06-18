@@ -5,7 +5,7 @@ import {
   createCmsSessionValue,
   isCmsPasswordConfigured,
   verifyCmsPassword,
-} from "@/lib/cms-cloudflare";
+} from "@/lib/cms-auth";
 
 export const runtime = "nodejs";
 

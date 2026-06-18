@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { BlogCmsContent } from "@/lib/blog-content";
 import { getServerBlogCmsContent } from "@/lib/blog-content-server";
-import { getCmsCloudflareEnv, isCmsWriteAuthorised } from "@/lib/cms-cloudflare";
+import { isCmsWriteAuthorised } from "@/lib/cms-auth";
+import { getCmsCloudflareEnv } from "@/lib/cms-cloudflare";
 
 export const runtime = "nodejs";
 

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getCmsCloudflareEnv, isCmsWriteAuthorised } from "@/lib/cms-cloudflare";
+import { isCmsWriteAuthorised } from "@/lib/cms-auth";
+import { getCmsCloudflareEnv } from "@/lib/cms-cloudflare";
 import { assertSafeUploadedImage, ImageUploadValidationError } from "@/lib/image-upload-security";
 
 export const runtime = "nodejs";

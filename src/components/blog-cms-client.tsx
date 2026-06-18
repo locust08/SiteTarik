@@ -973,7 +973,7 @@ export function BlogCmsClient() {
 
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-[calc(100vh-7rem)] items-center justify-center bg-[var(--surface-strong)] px-5 pb-16 pt-[118px] text-[var(--foreground)]">
+      <main className="dashboard-enter flex min-h-[calc(100vh-7rem)] items-center justify-center bg-[var(--surface-strong)] px-5 pb-16 pt-[118px] text-[var(--foreground)]">
         <section className="w-full max-w-[440px] rounded-[2rem] border border-[var(--border)] bg-white p-7 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">
             Protected CMS
@@ -1031,7 +1031,7 @@ export function BlogCmsClient() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--surface)] pb-10 pt-8 text-[var(--foreground)]">
+    <main className="dashboard-enter min-h-screen bg-[var(--surface)] pb-10 pt-8 text-[var(--foreground)]">
         <div className={`mx-auto flex flex-col gap-5 px-5 pb-3 transition-[max-width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-7 lg:px-6 ${isPreviewOpen ? "max-w-[1680px]" : "max-w-[1230px]"}`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

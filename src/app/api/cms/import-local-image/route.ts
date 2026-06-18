@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse, type NextRequest } from "next/server";
-import { isCmsWriteAuthorised } from "@/lib/cms-cloudflare";
+import { isCmsWriteAuthorised } from "@/lib/cms-auth";
 import {
   assertSafeUploadedImage,
   ImageUploadValidationError,

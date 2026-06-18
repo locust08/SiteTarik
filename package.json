@@ -4,14 +4,16 @@
   "private": true,
   "scripts": {
     "prebuild": "node scripts\\update-sitemap-lastmod.mjs",
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "dev:doppler": "doppler run -- npm run dev",
     "dev:live": "doppler run -- npm run dev",
     "build": "next build --webpack",
     "preview": "opennextjs-cloudflare build && node scripts\\fix-opennext-durable-objects.mjs && opennextjs-cloudflare preview",
+    "preview:sandbox": "opennextjs-cloudflare build && node scripts\\fix-opennext-durable-objects.mjs && wrangler dev --config wrangler.workersdev.jsonc",
     "preview:doppler": "doppler run -- npm run preview",
     "preview:live": "doppler run -- npm run preview",
     "deploy": "opennextjs-cloudflare build && node scripts\\fix-opennext-durable-objects.mjs && opennextjs-cloudflare deploy",
+    "deploy:sandbox": "opennextjs-cloudflare build && node scripts\\fix-opennext-durable-objects.mjs && wrangler deploy --config wrangler.workersdev.jsonc",
     "deploy:doppler": "doppler run -- npm run deploy",
     "start": "next start",
     "lint": "eslint",
@@ -21,8 +23,10 @@
     "stripe:ack-alerts": "node scripts\\ack-stripe-alerts.mjs"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "lucide-react": "^1.8.0",
     "next": "16.2.3",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "stripe": "^22.0.1"
@@ -38,8 +42,8 @@
     "pixelmatch": "^7.1.0",
     "playwright": "^1.59.1",
     "pngjs": "^7.0.0",
-    "wrangler": "^4.68.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.68.0"
   }
 }
