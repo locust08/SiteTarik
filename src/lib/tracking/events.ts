@@ -12,6 +12,11 @@ const siteTarikTrackedEventNames = new Set([
   "site_tarik_checkout_started",
   "site_tarik_checkout_success",
   "site_tarik_blog_brief_submitted",
+  "site_tarik_blog_card_click",
+  "site_tarik_blog_cta_click",
+  "site_tarik_navigation_click",
+  "site_tarik_outbound_click",
+  "site_tarik_whatsapp_click",
 ]);
 
 function toGa4EventName(eventName: string) {
@@ -33,6 +38,26 @@ function toGa4EventName(eventName: string) {
 
   if (eventName === "site_tarik_blog_brief_submitted") {
     return "blog_brief_submitted";
+  }
+
+  if (eventName === "site_tarik_blog_card_click") {
+    return "select_content";
+  }
+
+  if (eventName === "site_tarik_blog_cta_click") {
+    return "blog_cta_click";
+  }
+
+  if (eventName === "site_tarik_navigation_click") {
+    return "navigation_click";
+  }
+
+  if (eventName === "site_tarik_outbound_click") {
+    return "outbound_click";
+  }
+
+  if (eventName === "site_tarik_whatsapp_click") {
+    return "whatsapp_click";
   }
 
   return eventName;
@@ -63,6 +88,15 @@ export function pushSiteTarikEvent(eventName: string, payload: Record<string, un
       event: eventName,
       ...analyticsPayload,
     });
+
+    if (
+      eventName !== "site_tarik_page_view" &&
+      config.ga4MeasurementId &&
+      typeof browserWindow.gtag === "function"
+    ) {
+      browserWindow.gtag("event", directGa4EventName, analyticsPayload);
+    }
+
     return;
   }
 

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { TrackedLink } from "@/components/tracked-link";
 import {
   blogCmsStorageKey,
   defaultBlogContent,
@@ -70,7 +70,20 @@ export function BlogOverviewClient({ initialContent = defaultBlogContent }: { in
                 key={post.id}
                 className="group overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.05)] transition-[border-color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[rgba(238,32,40,0.2)] hover:shadow-[0_16px_34px_rgba(0,0,0,0.08)]"
               >
-                <Link href={`/blog/${post.slug}`} className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-4">
+                <TrackedLink
+                  href={`/blog/${post.slug}`}
+                  className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-4"
+                  trackingEvent="site_tarik_blog_card_click"
+                  trackingLabel={post.title}
+                  trackingLocation="blog_overview_card"
+                  trackingPayload={{
+                    content_type: "blog_post",
+                    item_id: post.slug,
+                    item_name: post.title,
+                    blog_slug: post.slug,
+                    blog_title: post.title,
+                  }}
+                >
                   <img
                     src={post.thumbnailImage}
                     alt=""
@@ -91,7 +104,7 @@ export function BlogOverviewClient({ initialContent = defaultBlogContent }: { in
                       </RevealIcon>
                     </span>
                   </div>
-                </Link>
+                </TrackedLink>
               </article>
             ))}
           </section>

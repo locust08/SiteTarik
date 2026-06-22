@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
-
-const whatsappHref = SITE_TARIK_CHATBOT_WHATSAPP_URL;
+import { TrackedLink } from "@/components/tracked-link";
+import { getSiteTarikWhatsAppHref, SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
 
 function WhatsAppIcon() {
   return (
@@ -24,6 +22,9 @@ function WhatsAppIcon() {
 
 export function FloatingWhatsApp() {
   const pathname = usePathname();
+  const whatsappHref = getSiteTarikWhatsAppHref({
+    fallbackHref: SITE_TARIK_CHATBOT_WHATSAPP_URL,
+  });
 
   if (pathname?.startsWith("/cms")) {
     return null;
@@ -31,13 +32,16 @@ export function FloatingWhatsApp() {
 
   return (
     <div className="group fixed bottom-5 right-5 z-[70]">
-      <Link
+      <TrackedLink
         href={whatsappHref}
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"
         title="Chat on WhatsApp"
         className="flex items-center"
+        trackingEvent="site_tarik_whatsapp_click"
+        trackingLabel="Chat on WhatsApp"
+        trackingLocation="floating_whatsapp"
       >
         <span className="pointer-events-none mr-3 translate-x-2 rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100">
           WhatsApp
@@ -45,7 +49,7 @@ export function FloatingWhatsApp() {
         <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_12px_30px_rgba(37,211,102,0.32)] transition-transform duration-200 group-hover:-translate-y-1 group-focus-within:-translate-y-1">
           <WhatsAppIcon />
         </span>
-      </Link>
+      </TrackedLink>
     </div>
   );
 }

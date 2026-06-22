@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { CtaLink } from "@/components/cta-link";
+import { TrackedLink } from "@/components/tracked-link";
 import { siteStickyHeaderClassName } from "@/lib/site-header";
 
 const navItems = [
@@ -32,13 +33,16 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
 
             <nav className="hidden flex-1 items-center justify-end gap-8 text-sm font-semibold text-[var(--foreground)]/88 lg:flex">
               {navItems.map((item) => (
-                <Link
+                <TrackedLink
                   key={item.href}
                   href={item.href}
                   title={item.label}
                   className={`relative pb-1 transition ${
                     activeKey === item.activeKey ? "text-[var(--gold)]" : "hover:text-[var(--gold)]"
                   }`}
+                  trackingEvent="site_tarik_navigation_click"
+                  trackingLabel={item.label}
+                  trackingLocation="public_nav_desktop"
                 >
                   {item.label}
                   <span
@@ -46,21 +50,24 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
                       activeKey === item.activeKey ? "bg-[var(--gold)] opacity-100" : "opacity-0"
                     }`}
                   />
-                </Link>
+                </TrackedLink>
               ))}
             </nav>
 
             <div className="hidden lg:flex">
-              <Link
+              <TrackedLink
                 href="/#contact"
                 title="Start Upgrade"
                 className="group inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#d81c23]"
+                trackingEvent="site_tarik_navigation_click"
+                trackingLabel="Start Upgrade"
+                trackingLocation="public_nav_desktop_cta"
               >
                 Start Upgrade
                 <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
                   <ArrowRight className="h-4 w-4" />
                 </span>
-              </Link>
+              </TrackedLink>
             </div>
 
             <button
@@ -83,7 +90,7 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
         <div className="hero-panel grain absolute left-4 top-24 w-[calc(100%-2rem)] rounded-[2rem] border border-white/8 px-6 py-8 text-white shadow-[var(--shadow)]">
           <div className="mb-8 space-y-5">
             {navItems.map((item) => (
-              <Link
+              <TrackedLink
                 key={item.href}
                 href={item.href}
                 title={item.label}
@@ -91,9 +98,12 @@ export function SiteTarikPublicNav({ activeKey = "blog" }: { activeKey?: string 
                   activeKey === item.activeKey ? "text-[var(--gold-soft)]" : ""
                 }`}
                 onClick={() => setMenuOpen(false)}
+                trackingEvent="site_tarik_navigation_click"
+                trackingLabel={item.label}
+                trackingLocation="public_nav_mobile"
               >
                 {item.label}
-              </Link>
+              </TrackedLink>
             ))}
           </div>
           <CtaLink href="/#contact" variant="soft">

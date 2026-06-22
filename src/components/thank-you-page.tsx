@@ -24,7 +24,8 @@ import {
   readTrackingSnapshotFromBrowser,
 } from "@/lib/tracking/browser";
 import { siteStickyHeaderClassName } from "@/lib/site-header";
-import { SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
+import { TrackedLink } from "@/components/tracked-link";
+import { getSiteTarikWhatsAppHref, SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
 
 type ReceiptData = {
   fullName: string;
@@ -604,8 +605,9 @@ export function ThankYouPage({
     ? formatCountdown(new Date(countdownStart).getTime() + deliveryEtaMs - now)
     : "";
 
-  const handleWhatsAppClick = () => {
-  };
+  const whatsappHref = getSiteTarikWhatsAppHref({
+    fallbackHref: SITE_TARIK_CHATBOT_WHATSAPP_URL,
+  });
 
   const handleDownloadReceipt = async () => {
     if (!stripeSessionId) {
@@ -712,12 +714,18 @@ export function ThankYouPage({
               </h1>
               <p className="max-w-[28rem] text-base leading-7 text-[var(--muted)] sm:text-lg">
                 Preparing your website handoff for final delivery on WhatsApp.{" "}
-                <Link
-                  href={SITE_TARIK_CHATBOT_WHATSAPP_URL}
+                <TrackedLink
+                  href={whatsappHref}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={handleWhatsAppClick}
                   className="font-semibold text-[var(--foreground)] transition-colors duration-200 hover:text-[#25D366]"
+                  trackingEvent="site_tarik_whatsapp_click"
+                  trackingLabel="Questions? WhatsApp us."
+                  trackingLocation="thank_you_intro"
+                  trackingPayload={{
+                    stripe_session_id: stripeSessionId ?? "",
+                    package_name: receipt.selectedPackage,
+                  }}
                 >
                   <span className="md:hidden">Questions? WhatsApp us.</span>
                   <span className="hidden items-center gap-1 md:inline-flex group">
@@ -726,7 +734,7 @@ export function ThankYouPage({
                       WhatsApp us.
                     </span>
                   </span>
-                </Link>
+                </TrackedLink>
               </p>
             </div>
 
@@ -850,12 +858,18 @@ export function ThankYouPage({
             </div>
 
             <div className="mt-3 flex flex-col gap-3">
-              <Link
-                href={SITE_TARIK_CHATBOT_WHATSAPP_URL}
+              <TrackedLink
+                href={whatsappHref}
                 target="_blank"
                 rel="noreferrer"
-                onClick={handleWhatsAppClick}
                 className="group/whatsapp inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-[#1fb85a] hover:shadow-[0_10px_22px_rgba(37,211,102,0.16)]"
+                trackingEvent="site_tarik_whatsapp_click"
+                trackingLabel="WhatsApp Us"
+                trackingLocation="thank_you_summary"
+                trackingPayload={{
+                  stripe_session_id: stripeSessionId ?? "",
+                  package_name: receipt.selectedPackage,
+                }}
               >
                 WhatsApp Us
                 <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover/whatsapp:w-4 group-hover/whatsapp:translate-x-0 group-hover/whatsapp:opacity-100 group-focus-visible/whatsapp:w-4 group-focus-visible/whatsapp:translate-x-0 group-focus-visible/whatsapp:opacity-100">
@@ -868,7 +882,7 @@ export function ThankYouPage({
                     referrerPolicy="no-referrer"
                   />
                 </span>
-              </Link>
+              </TrackedLink>
 
               <button
                 type="button"

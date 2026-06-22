@@ -13,7 +13,8 @@
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://sitetarik.com",
     "NEXT_PUBLIC_GTM_ID": "GTM-5F3MLDMN",
-    "NEXT_PUBLIC_GA4_MEASUREMENT_ID": "G-2RV95WLNQ2"
+    "NEXT_PUBLIC_GA4_MEASUREMENT_ID": "G-2RV95WLNQ2",
+    "NEXT_PUBLIC_WHATSAPP_CHAT_URL": "https://sitetarik-chatbot-v2.easondev.workers.dev/wa/sitetarik"
   },
   "assets": {
     "directory": ".open-next/assets",

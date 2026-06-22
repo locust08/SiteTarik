@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { TrackedLink } from "@/components/tracked-link";
 
 type CtaVariant = "soft" | "light" | "brand" | "dark";
 
@@ -36,20 +36,30 @@ export function CtaLink({
   variant = "soft",
   className = "",
   title,
+  trackingEvent = "site_tarik_navigation_click",
+  trackingLocation = "cta",
+  trackingPayload,
 }: {
   href: string;
   children: React.ReactNode;
   variant?: CtaVariant;
   className?: string;
   title?: string;
+  trackingEvent?: string;
+  trackingLocation?: string;
+  trackingPayload?: Record<string, unknown>;
 }) {
   const linkTitle = title ?? (typeof children === "string" ? children : undefined);
 
   return (
-    <Link
+    <TrackedLink
       href={href}
       title={linkTitle}
       className={ctaClassName(variant, className)}
+      trackingEvent={trackingEvent}
+      trackingLabel={linkTitle}
+      trackingLocation={trackingLocation}
+      trackingPayload={trackingPayload}
     >
       <span className={ctaContentClassName}>
         {children}
@@ -57,6 +67,6 @@ export function CtaLink({
           <ArrowRight className="h-4 w-4" />
         </span>
       </span>
-    </Link>
+    </TrackedLink>
   );
 }

@@ -33,6 +33,7 @@ import {
   defaultBlogContent,
   formatBlogDate,
   normalizeSlug,
+  type BlogCmsContent,
   type BlogPost,
   type BlogSection,
 } from "@/lib/blog-content";

@@ -1,13 +1,12 @@
 ﻿"use client";
 
 import Image, { type StaticImageData } from "next/image";
-import Link from "next/link";
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
-import serviceShowcaseImage from "../../Image/Clean House Website.png";
-import educationShowcaseImage from "../../Image/University Website.png";
-import homeLivingShowcaseImage from "../../Image/SamadDesigns Website.png";
-import localSmeShowcaseImage from "../../Image/SamadPaip Website.png";
-import heroImage from "../../Image/SiteTarik Hero Image Cutout.png";
+import serviceShowcaseImage from "../../Image/Clean House Website.webp";
+import educationShowcaseImage from "../../Image/University Website.webp";
+import homeLivingShowcaseImage from "../../Image/SamadDesigns Website.webp";
+import localSmeShowcaseImage from "../../Image/SamadPaip Website.webp";
+import heroImage from "../../Image/SiteTarik Hero Image Cutout.webp";
 import pricingImage from "../../Image/Pricing Image.webp";
 import stressSectionImage from "../../Image/Stress Section.webp";
 import {
@@ -30,6 +29,7 @@ import {
 } from "lucide-react";
 import { CivitasFooter } from "@/components/civitas-footer";
 import { CtaLink } from "@/components/cta-link";
+import { TrackedLink } from "@/components/tracked-link";
 import { WebsiteSubmissionSection } from "@/components/website-submission-section";
 import { getSiteTarikPackageTitle } from "@/lib/order-flow";
 import { siteStickyHeaderClassName } from "@/lib/site-header";
@@ -543,13 +543,16 @@ export function CivitasPage() {
       >
         <div className="mx-auto w-full max-w-[1230px] px-5 py-7 sm:px-7 lg:px-6">
           <div className="flex items-center justify-between gap-5">
-            <Link
+            <TrackedLink
               href="#top"
               title="SiteTarik homepage"
               className="font-[family-name:var(--font-heading)] text-[2rem] font-semibold leading-none tracking-[-0.04em]"
+              trackingEvent="site_tarik_navigation_click"
+              trackingLabel="SiteTarik homepage"
+              trackingLocation="home_header_logo"
             >
               SiteTarik
-            </Link>
+            </TrackedLink>
 
             <nav
               className={`hidden flex-1 items-center justify-end gap-8 text-sm font-semibold lg:flex ${
@@ -557,7 +560,7 @@ export function CivitasPage() {
               }`}
             >
               {navItems.map((item) => (
-                <Link
+                <TrackedLink
                   key={item.href}
                   href={item.href}
                   title={item.label}
@@ -571,6 +574,9 @@ export function CivitasPage() {
                         : "hover:text-white"
                   }`}
                   onClick={() => setActiveSection(item.href.slice(1))}
+                  trackingEvent="site_tarik_navigation_click"
+                  trackingLabel={item.label}
+                  trackingLocation="home_header_desktop"
                 >
                   {item.label}
                   <span
@@ -582,25 +588,28 @@ export function CivitasPage() {
                         : "opacity-0"
                     }`}
                   />
-                </Link>
+                </TrackedLink>
               ))}
             </nav>
 
             <div className="hidden lg:flex">
-              <Link
+              <TrackedLink
                 href="#contact"
                 title="Start Upgrade"
                 className={`group inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-[transform,background-color,box-shadow,color] duration-200 hover:-translate-y-0.5 ${
                   headerSolid
                     ? "bg-[var(--gold)] text-white hover:bg-[#d81c23]"
                     : "bg-white text-[var(--teal-deep)] hover:bg-white/92"
-                }`}
+                  }`}
+                trackingEvent="site_tarik_navigation_click"
+                trackingLabel="Start Upgrade"
+                trackingLocation="home_header_desktop_cta"
               >
                 Start Upgrade
                 <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
                   <ArrowRight className="h-4 w-4" />
                 </span>
-              </Link>
+              </TrackedLink>
             </div>
 
             <button
@@ -629,7 +638,7 @@ export function CivitasPage() {
         <div className="hero-panel grain absolute left-4 top-24 w-[calc(100%-2rem)] rounded-[2rem] border border-white/8 px-6 py-8 text-white shadow-[var(--shadow)]">
           <div className="mb-8 space-y-5">
             {navItems.map((item) => (
-              <Link
+              <TrackedLink
                 key={item.href}
                 href={item.href}
                 title={item.label}
@@ -642,9 +651,12 @@ export function CivitasPage() {
                   setActiveSection(item.href.slice(1));
                   setMenuOpen(false);
                 }}
+                trackingEvent="site_tarik_navigation_click"
+                trackingLabel={item.label}
+                trackingLocation="home_header_mobile"
               >
                 {item.label}
-              </Link>
+              </TrackedLink>
             ))}
           </div>
           <CtaLink href="#contact" variant="soft">
@@ -674,16 +686,19 @@ export function CivitasPage() {
                 >
                   Start Upgrade
                 </CtaLink>
-                <Link
+                <TrackedLink
                   href="#how-it-work"
                   title="See How It Works"
                   className="inline-flex items-center gap-3 text-sm font-semibold text-white/88 hover:text-[var(--gold-soft)]"
+                  trackingEvent="site_tarik_navigation_click"
+                  trackingLabel="See How It Works"
+                  trackingLocation="home_hero_secondary_cta"
                 >
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/6">
                     <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
                   </span>
                   See How It Works
-                </Link>
+                </TrackedLink>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-2.5 text-[0.78rem] text-white/84 sm:mt-7 sm:gap-3 sm:text-sm">

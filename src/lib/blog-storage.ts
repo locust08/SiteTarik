@@ -103,9 +103,57 @@ export async function saveBlogCmsContent(content: BlogCmsContent) {
   }
 }
 
+async function convertImageFileToWebp(file: File) {
+  if (file.type === "image/webp") {
+    return file;
+  }
+
+  if (!file.type.startsWith("image/") || typeof createImageBitmap !== "function") {
+    return file;
+  }
+
+  const bitmap = await createImageBitmap(file).catch(() => null);
+
+  if (!bitmap) {
+    return file;
+  }
+
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(bitmap, 0, 0);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.82);
+    });
+
+    if (!blob) {
+      return file;
+    }
+
+    const fileName = file.name.replace(/\.[^.]+$/, "") || "blog-image";
+
+    return new File([blob], `${fileName}.webp`, {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  } finally {
+    bitmap.close();
+  }
+}
+
 export async function uploadBlogCmsImage(file: File) {
+  const uploadFile = await convertImageFileToWebp(file);
   const formData = new FormData();
-  formData.set("image", file);
+  formData.set("image", uploadFile);
 
   const response = await fetch("/api/cms/upload-image", {
     method: "POST",

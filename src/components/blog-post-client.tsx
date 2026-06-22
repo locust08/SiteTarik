@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { TrackedLink } from "@/components/tracked-link";
 import {
   blogCmsStorageKey,
   defaultBlogContent,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/blog-content";
 import { fetchBlogCmsContent, readBlogCmsContent } from "@/lib/blog-storage";
 import { AiEmphasizedParagraphs } from "@/components/blog-ai-emphasis";
+import { getSiteTarikWhatsAppHref, SITE_TARIK_CHATBOT_WHATSAPP_URL } from "@/lib/whatsapp";
 
 function RevealIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -83,18 +85,31 @@ export function BlogPostClient({
 
   const featuredImageTitle = `${post.title} article image`;
   const ctaLinkTitle = post.ctaButtonText || "Contact SiteTarik";
+  const ctaHref = post.ctaHref === SITE_TARIK_CHATBOT_WHATSAPP_URL
+    ? getSiteTarikWhatsAppHref({ fallbackHref: SITE_TARIK_CHATBOT_WHATSAPP_URL })
+    : post.ctaHref;
+  const ctaEvent = ctaHref.includes("wa.me") || ctaHref.includes("whatsapp") || ctaHref.includes("/wa/")
+    ? "site_tarik_whatsapp_click"
+    : "site_tarik_blog_cta_click";
 
   return (
     <main className="min-h-screen bg-[var(--surface)] px-6 pb-10 pt-[118px] text-[var(--foreground)] sm:px-8 lg:px-10">
       <article className="mx-auto w-full max-w-[920px]">
-        <Link
+        <TrackedLink
           href="/blog"
           title="Blog Overview"
           className="group mb-7 mt-3 inline-flex items-center gap-2.5 text-base font-semibold text-[var(--gold)] transition-colors duration-200 hover:text-[#d81c23] sm:mb-8 sm:mt-5"
+          trackingEvent="site_tarik_navigation_click"
+          trackingLabel="Blog Overview"
+          trackingLocation="blog_post_back_link"
+          trackingPayload={{
+            blog_slug: post.slug,
+            blog_title: post.title,
+          }}
         >
           <ArrowLeft className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
           Blog Overview
-        </Link>
+        </TrackedLink>
         <img
           src={post.featuredImage}
           alt={featuredImageTitle}
@@ -126,16 +141,24 @@ export function BlogPostClient({
         <section className="my-8 rounded-[8px] bg-[#111111] px-6 py-8 text-white sm:px-8">
           <h2 className="text-3xl font-semibold tracking-[-0.03em]">{post.ctaTitle}</h2>
           <p className="mt-3 max-w-[40rem] text-base leading-7 text-white/74">{post.ctaText}</p>
-          <Link
-            href={post.ctaHref}
+          <TrackedLink
+            href={ctaHref}
             title={ctaLinkTitle}
             className="group mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#d81c23]"
+            trackingEvent={ctaEvent}
+            trackingLabel={post.ctaButtonText}
+            trackingLocation="blog_post_cta"
+            trackingPayload={{
+              blog_slug: post.slug,
+              blog_title: post.title,
+              cta_title: post.ctaTitle,
+            }}
           >
             {post.ctaButtonText}
             <RevealIcon>
               <ArrowRight className="h-4 w-4" />
             </RevealIcon>
-          </Link>
+          </TrackedLink>
         </section>
       </article>
     </main>

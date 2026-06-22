@@ -3,6 +3,7 @@ import {
   ArrowRight,
   MapPin,
 } from "lucide-react";
+import { TrackedLink } from "@/components/tracked-link";
 
 const menuLinks = [
   { label: "Pricing", href: "/#pricing" },
@@ -47,13 +48,16 @@ export function CivitasFooter() {
             <ul className="mt-5 space-y-3 text-base text-[rgba(17,17,17,0.72)]">
               {menuLinks.map((item) => (
                 <li key={item.label}>
-                  <Link
+                  <TrackedLink
                     href={item.href}
                     title={item.label}
                     className="hover:text-[var(--foreground)]"
+                    trackingEvent="site_tarik_navigation_click"
+                    trackingLabel={item.label}
+                    trackingLocation="footer_menu"
                   >
                     {item.label}
-                  </Link>
+                  </TrackedLink>
                 </li>
               ))}
             </ul>
@@ -68,11 +72,16 @@ export function CivitasFooter() {
                 const Icon = item.icon;
 
                 return (
-                  <Link
+                  <TrackedLink
                     key={item.label}
                     href={item.href}
                     title={item.label}
+                    target="_blank"
+                    rel="noreferrer"
                     className="group flex items-center justify-between rounded-[1rem] border border-[rgba(0,0,0,0.08)] bg-[rgba(255,255,255,0.7)] px-4 py-4 text-[var(--foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.04)] transition-[background-color,border-color,color,transform] duration-200 hover:border-[rgba(0,0,0,0.12)] hover:bg-white"
+                    trackingEvent="site_tarik_outbound_click"
+                    trackingLabel={item.label}
+                    trackingLocation="footer_contact"
                   >
                     <span className="flex items-center gap-3">
                       <Icon className="h-4 w-4 text-[var(--gold)]" />
@@ -81,7 +90,7 @@ export function CivitasFooter() {
                     <span className="w-0 -translate-x-1 overflow-hidden opacity-0 transition-[width,opacity,transform] duration-200 ease-out group-hover:w-4 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:w-4 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
                       <ArrowRight className="h-4 w-4" />
                     </span>
-                  </Link>
+                  </TrackedLink>
                 );
               })}
             </div>
